@@ -11,13 +11,13 @@ Delivery is split into 6 phases. Each phase ends with a conventional commit, a p
 - [x] Currency/Date utils, default category seeds, unit-test smoke, launcher icon, docs (README/ROADMAP/ADR)
 - [x] Commit + push: `feat(foundation): phase 1 ...`
 
-## Phase 2 — Core UI & Transactions ⬜
-- [ ] Home balance card + recent-transactions preview
-- [ ] Full Add/Edit screen (type toggle, category picker, date picker, amount validation, payment method)
-- [ ] Transaction list: sort (date/amount/category asc/desc), search, type + category filters, swipe-to-delete
-- [ ] Category management dialog (create/rename/recolor/delete custom)
-- [ ] Empty states, loading/error states
-- [ ] Commit + push: `feat(transactions): phase 2 ...`
+## Phase 2 — Core UI & Transactions ✅
+- [x] Home balance card + recent-transactions preview
+- [x] Full Add/Edit screen (type toggle, category picker, date picker, amount validation, payment method)
+- [x] Transaction list: sort (date/amount/category asc/desc), search, type + category filters, swipe-to-delete
+- [x] Category management dialog (create/rename/recolor/delete custom)
+- [x] Empty states, loading/error states
+- [x] Commit + push: `feat(transactions): phase 2 ...`
 
 ## Phase 3 — Charts & Reports ⬜
 - [ ] Vico pie (category breakdown, income vs expense toggle) + line/bar (monthly trends)

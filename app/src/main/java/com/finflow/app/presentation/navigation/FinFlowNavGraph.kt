@@ -85,7 +85,11 @@ fun FinFlowNavGraph() {
             modifier = Modifier.padding(padding)
         ) {
             composable(Routes.HOME) {
-                HomeScreen(onAddClick = { navController.navigate(Routes.addEdit()) })
+                HomeScreen(
+                    onAddClick = { navController.navigate(Routes.addEdit()) },
+                    onSeeAllClick = { navController.navigate(Routes.TRANSACTIONS) },
+                    onEditClick = { id -> navController.navigate(Routes.addEdit(id = id)) }
+                )
             }
             composable(Routes.TRANSACTIONS) {
                 TransactionsScreen(
