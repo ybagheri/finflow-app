@@ -27,7 +27,7 @@ import androidx.navigation.navArgument
 import com.finflow.app.presentation.screens.addedit.AddEditScreen
 import com.finflow.app.presentation.screens.categories.CategoriesScreen
 import com.finflow.app.presentation.screens.home.HomeScreen
-import com.finflow.app.presentation.screens.reports.ReportsPlaceholderScreen
+import com.finflow.app.presentation.screens.reports.ReportsScreen
 import com.finflow.app.presentation.screens.settings.SettingsPlaceholderScreen
 import com.finflow.app.presentation.screens.transactions.TransactionsScreen
 
@@ -107,7 +107,7 @@ fun FinFlowNavGraph() {
                 AddEditScreen(onDone = { navController.popBackStack() })
             }
             composable(Routes.CATEGORIES) { CategoriesScreen() }
-            composable(Routes.REPORTS) { ReportsPlaceholderScreen() }
+            composable(Routes.REPORTS) { ReportsScreen() }
             composable(Routes.SETTINGS) { SettingsPlaceholderScreen() }
         }
     }

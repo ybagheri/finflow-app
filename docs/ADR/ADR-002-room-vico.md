@@ -15,3 +15,12 @@ The app must work fully offline; charts must be pure-Compose and Material 3 frie
 + Zero-backend, instant local reads, simple backup story.
 + Vico avoids WebView/native chart bridges.
 - Future sync will need a sync-status column and conflict policy (deferred to post-v1).
+
+## Addendum (Phase 3, 2026-09-12)
+Charts shipped hand-rolled on Compose Canvas (`ReportCharts.kt`: donut +
+grouped bars) instead of Vico. Rationale: Vico 1.x → 2.x API churn made the
+declared 1.13.1 chart API a compile risk with no local SDK to verify against;
+Canvas covers exactly the two charts the roadmap needs (category breakdown +
+monthly trends) with M3 colors and zero extra API surface. The Vico
+dependencies stay declared in the catalog so a future migration is a pure UI
+swap with no data-layer changes.

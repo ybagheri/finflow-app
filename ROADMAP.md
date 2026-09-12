@@ -19,11 +19,11 @@ Delivery is split into 6 phases. Each phase ends with a conventional commit, a p
 - [x] Empty states, loading/error states
 - [x] Commit + push: `feat(transactions): phase 2 ...`
 
-## Phase 3 — Charts & Reports ⬜
-- [ ] Vico pie (category breakdown, income vs expense toggle) + line/bar (monthly trends)
-- [ ] Reports screen: monthly/yearly summary, category totals, net balance, top categories
-- [ ] Export CSV + PDF (Storage Access Framework share)
-- [ ] Commit + push: `feat(reports): phase 3 ...`
+## Phase 3 — Charts & Reports ✅
+- [x] Canvas donut (category breakdown, income vs expense toggle) + grouped bars (monthly trends) — hand-rolled, see ADR-002 addendum
+- [x] Reports screen: monthly/yearly summary, category totals, net balance, top categories
+- [x] Export CSV + PDF (Storage Access Framework share)
+- [x] Commit + push: `feat(reports): phase 3 ...`
 
 ## Phase 4 — Advanced Features ⬜
 - [ ] Budgets: monthly caps, progress bars, overspend alerts (notifications)
