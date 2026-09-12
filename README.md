@@ -1,27 +1,27 @@
 # FinFlow — Modern Personal Finance Tracker
 
-> **Status: Phase 5 — Polish & extras complete.** Budgets, goals, recurring, insights, theming, onboarding, biometric lock, widget and multi-currency are live. See [ROADMAP.md](ROADMAP.md).
+> **Status: v1.0.0 released.** All 6 phases complete: foundation, transactions, reports, advanced features, polish and CI/CD. See [ROADMAP.md](ROADMAP.md).
 
 FinFlow is an offline-first Android personal finance tracker built with Kotlin, Jetpack Compose + Material 3, Room, Hilt and Navigation Compose.
 
 ## Features
 
-| Area | Phase 1 | Planned |
-|---|---|---|
-| Transactions (income/expense, amount, category, date, note, payment method) | DB + repository + skeleton add/list screens | Full add/edit UI, sorting, search & filter (Phase 2) |
-| Charts (pie + line/bar, income & expenses) | Vico dependency wired | Phase 3 |
-| Reports (monthly/yearly, category totals, net balance, top categories, CSV/PDF export) | Placeholder screen | Phase 3 |
-| Budgets per category + overspend alerts | Entity + DAO + repository | Monthly caps UI + notification alerts (Phase 4) |
-| Financial goals + progress | Entity + DAO + repository | CRUD + deposits UI (Phase 4) |
-| Recurring transactions | Rule entity + DAO | Rules UI + WorkManager scheduler (Phase 4) |
-| Smart insights | — | Home card: MoM movers, daily average, streaks (Phase 4) |
-| Dark/Light theme, onboarding, biometric lock, widget, animations | Theme skeleton | Settings (theme/dynamic color), onboarding, lock, Glance widget, FAB haptics (Phase 5) |
-| CI (debug APK artifact) + release | This repo builds via GitHub Actions | Signed release Phase 6 |
-| Multi-currency (IRR + USD) | `CurrencyUtils` static 42,000 rate + formatter | Editable rate + display currency in settings, wired into Home (Phase 5) |
+| Area | Shipped |
+|---|---|
+| Transactions (income/expense, amount, category, date, note, payment method) | Full add/edit UI, sorting, search, type + category filters, swipe-to-delete |
+| Charts & reports | Category donut, monthly trends, monthly/yearly summary, net balance, top categories, CSV/PDF export |
+| Budgets | Monthly per-category caps, progress bars, one-shot overspend notifications |
+| Goals | CRUD, deposits, progress bars, optional deadlines |
+| Recurring transactions | Rules CRUD, active toggles, next-due dates, daily WorkManager materialization + manual run |
+| Smart insights | Home card: month-over-month movers, 30-day daily average, logging streak |
+| Personalization & security | System/light/dark theme + dynamic color, onboarding, biometric app lock |
+| Widget | Glance home-screen widget: balance + today's spending, tap to open |
+| Multi-currency | IRR/USD display currency with user-editable rate (settings → home + widget) |
+| CI/CD | Lint + unit tests + debug APK on every push; release APK attached to `v*` tags |
 
 ## Screenshots
 
-> Placeholders — real screenshots land in Phase 5 polish.
+> Screenshots are captured on a device/emulator during release QA and stored under `docs/screenshots/`.
 
 | Home | Transactions | Reports |
 |---|---|---|
@@ -33,11 +33,14 @@ FinFlow is an offline-first Android personal finance tracker built with Kotlin, 
 - **UI:** Jetpack Compose (BOM 2024.09.00) + Material 3
 - **Architecture:** MVVM + Clean (data / domain / presentation)
 - **DB:** Room 2.6.1 (offline-first)
-- **Charts:** Vico 1.13.1 (compose + compose-m3)
+- **Charts:** Hand-rolled Canvas charts (see `docs/ADR/ADR-002-room-vico.md` addendum)
 - **DI:** Hilt 2.51.1 (KSP)
 - **Navigation:** Navigation Compose 2.7.7
 - **Async:** Coroutines 1.8.1 + Flow
 - **Settings:** DataStore Preferences
+- **Background:** WorkManager 2.9.0 (recurring transactions)
+- **Security:** AndroidX Biometric (optional app lock)
+- **Widget:** Glance 1.1.1
 - **Min SDK 26 · Target/Compile 35 · Java 17 · Gradle Kotlin DSL + version catalog**
 
 ## Architecture Overview
@@ -49,17 +52,21 @@ com.finflow.app
 │   ├── local/dao/     TransactionDao, CategoryDao, BudgetDao, GoalDao, RecurringRuleDao
 │   ├── local/db/      FinFlowDatabase (v1)
 │   ├── mapper/        Entity <-> domain pure functions
+│   ├── prefs/         UserPreferences (DataStore: theme, currency, lock, onboarding)
+│   ├── work/          RecurringScheduler + RecurringWorker (WorkManager)
 │   └── repository/    Room-backed impls + default category seeds
 ├── domain/
 │   ├── model/         Transaction, Category, Budget, Goal, RecurringRule, Sort
 │   └── repository/    Interfaces (single source of truth contracts)
 ├── di/                DatabaseModule, RepositoryModule, CoroutineModule
-├── core/util/         DateUtils, CurrencyUtils
+├── core/util/         DateUtils, CurrencyUtils, ReportUtils, InsightsUtils, Notifications
 └── presentation/
-    ├── navigation/    Routes + FinFlowNavGraph (bottom bar + FAB)
-    ├── theme/         FinFlowTheme (M3 light/dark skeleton)
-    ├── components/    EmptyState
-    └── screens/       home, transactions, addedit, categories, reports*, settings*
+    ├── navigation/    Routes + FinFlowNavGraph (bottom bar + FAB + onboarding)
+    ├── theme/         FinFlowTheme (mode + dynamic color)
+    ├── components/    EmptyState, TransactionRow
+    ├── widget/        BalanceWidget (Glance)
+    └── screens/       home, transactions, addedit, categories, reports,
+                       budgets, goals, recurring, more, onboarding, settings
 ```
 
 Decisions are recorded in [docs/ADR](docs/ADR).
@@ -72,11 +79,40 @@ Requirements: JDK 17, Android SDK (API 35), no local Gradle install needed (wrap
 git clone https://github.com/ybagheri/finflow-app.git
 cd finflow-app
 ./gradlew assembleDebug        # APK -> app/build/outputs/apk/debug/
-./gradlew test                 # JVM unit tests
+./gradlew testDebugUnitTest    # JVM unit tests
+./gradlew lintDebug            # Android Lint (report: app/build/reports/)
 ./gradlew connectedCheck        # on emulator/device
 ```
 
-CI builds the same APK on every push to `main` and uploads it as an artifact.
+CI runs lint + unit tests + the debug build on every push to `main` and uploads the APK as an artifact. Pushing a `v*` tag builds the release APK and attaches it to the GitHub Release.
+
+### Signed release builds
+
+Release signing is optional and never committed. Provide credentials **either** as a git-ignored `keystore.properties` file:
+
+```properties
+storeFile=/absolute/path/finflow-release.jks
+storePassword=***
+keyAlias=finflow
+keyPassword=***
+```
+
+**or** as environment variables / CI secrets: `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
+
+Then:
+
+```bash
+./gradlew assembleRelease      # APK -> app/build/outputs/apk/release/
+```
+
+Without credentials the release build is unsigned (suitable for Play App Signing upload flows).
+
+## Store Listing (draft)
+
+- **Name:** FinFlow — Personal Finance Tracker
+- **Short description:** Offline-first money tracker: budgets, goals and smart insights.
+- **Full description:** FinFlow keeps your money organized without an account or a connection. Log income and expenses in seconds, cap spending with monthly budgets and overspend alerts, save towards goals, automate repeats, and see where your money goes with charts, reports and CSV/PDF export. Optional biometric lock, dark theme with dynamic color, IRR/USD support, and a home-screen widget.
+- **Category:** Finance · **Content rating:** Everyone · **Price:** Free
 
 ## Project Structure
 
@@ -87,8 +123,8 @@ CI builds the same APK on every push to `main` and uploads it as an artifact.
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) — 6 phases from foundation to CI/CD release.
+See [ROADMAP.md](ROADMAP.md) — 6 phases from foundation to CI/CD release (all complete).
 
 ## License
 
-TBD (MIT recommended for Phase 6).
+MIT — see [LICENSE](LICENSE).

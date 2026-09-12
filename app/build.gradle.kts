@@ -15,7 +15,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.0-phase1"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -23,8 +23,38 @@ android {
         }
     }
 
+    // Optional release signing (Phase 6): provide a keystore.properties file
+    // (storeFile/storePassword/keyAlias/keyPassword, git-ignored) or the
+    // KEYSTORE_FILE/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD env vars
+    // (CI secrets). Without credentials the release build stays unsigned.
+    val keystorePropsFile = rootProject.file("keystore.properties")
+    val hasReleaseKeystore =
+        keystorePropsFile.exists() || System.getenv("KEYSTORE_FILE") != null
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                if (keystorePropsFile.exists()) {
+                    val props = java.util.Properties()
+                    keystorePropsFile.inputStream().use { props.load(it) }
+                    storeFile = file(props.getProperty("storeFile", "finflow-release.jks"))
+                    storePassword = props.getProperty("storePassword")
+                    keyAlias = props.getProperty("keyAlias")
+                    keyPassword = props.getProperty("keyPassword")
+                } else {
+                    storeFile = file(System.getenv("KEYSTORE_FILE"))
+                    storePassword = System.getenv("KEYSTORE_PASSWORD")
+                    keyAlias = System.getenv("KEY_ALIAS")
+                    keyPassword = System.getenv("KEY_PASSWORD")
+                }
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

@@ -42,8 +42,8 @@ Delivery is split into 6 phases. Each phase ends with a conventional commit, a p
 - [ ] Real screenshots in README (needs a device/emulator run — placeholders stay until then)
 - [x] Commit + push: `feat(polish): phase 5 ...`
 
-## Phase 6 — CI/CD & Release ⬜
-- [ ] GitHub Actions: build debug APK on push to main + upload artifact (already live from Phase 1, extend with lint/unit tests)
-- [ ] Signed release build + versioning + release tag
-- [ ] Final README (build instructions, screenshots, store listing draft)
-- [ ] Commit + push: `chore(release): phase 6 ...`
+## Phase 6 — CI/CD & Release ✅
+- [x] GitHub Actions: build debug APK on push to main + upload artifact (already live from Phase 1, extend with lint/unit tests)
+- [x] Signed release build + versioning + release tag
+- [x] Final README (build instructions, screenshots, store listing draft)
+- [x] Commit + push: `chore(release): phase 6 ...`
