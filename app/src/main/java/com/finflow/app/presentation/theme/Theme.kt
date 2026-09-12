@@ -1,9 +1,17 @@
 package com.finflow.app.presentation.theme
 
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+
+/** Theme choice persisted in DataStore (Phase 5 settings). */
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 private val LightColors = lightColorScheme(
     primary = Color(0xFF6750A4),
@@ -26,19 +34,33 @@ private val DarkColors = darkColorScheme(
 )
 
 /**
- * Phase 1 theme skeleton: Material 3 light/dark schemes.
- * Dynamic color, custom typography and motion land in Phase 5 polish.
+ * Phase 5 theme: stored [mode] (system/light/dark) plus Material You
+ * dynamic color on Android 12+ (falls back to the static schemes below).
  *
- * @param darkTheme whether to use the dark scheme
- * @param content app content
+ * @param darkTheme legacy override used only by previews/tests
  */
 @Composable
 fun FinFlowTheme(
-    darkTheme: Boolean = false,
+    mode: ThemeMode = ThemeMode.SYSTEM,
+    dynamicColor: Boolean = true,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    val dark = when (mode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> darkTheme
+    }
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        dark -> DarkColors
+        else -> LightColors
+    }
     androidx.compose.material3.MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
+        colorScheme = colorScheme,
         content = content
     )
 }

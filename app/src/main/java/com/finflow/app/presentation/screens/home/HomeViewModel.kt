@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.finflow.app.core.util.CategoryDelta
 import com.finflow.app.core.util.InsightsUtils
 import com.finflow.app.core.util.ReportUtils
+import com.finflow.app.data.prefs.UserPreferences
 import com.finflow.app.domain.model.Transaction
 import com.finflow.app.domain.model.TransactionSort
 import com.finflow.app.domain.model.TransactionSortField
@@ -39,7 +40,8 @@ data class HomeInsights(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     transactions: TransactionRepository,
-    private val categoriesRepo: CategoryRepository
+    private val categoriesRepo: CategoryRepository,
+    prefs: UserPreferences
 ) : ViewModel() {
 
     val balance = transactions.observeBalance()
@@ -61,6 +63,12 @@ class HomeViewModel @Inject constructor(
     /** Category lookup for resolving names/colors in the preview rows. */
     val categoryList = categoriesRepo.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Phase 5 display currency + rate for converting home totals. */
+    val displayCurrency: StateFlow<String> = prefs.displayCurrency
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "IRR")
+    val irrPerUsd: StateFlow<Double> = prefs.irrPerUsd
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 42_000.0)
 
     /** Full transaction list backing the smart-insights card. */
     private val allTransactions: StateFlow<List<Transaction>> =

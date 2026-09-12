@@ -1,6 +1,6 @@
 # FinFlow — Modern Personal Finance Tracker
 
-> **Status: Phase 1 — Foundation complete.** Database, DI, navigation skeleton and reactive totals are live. See [ROADMAP.md](ROADMAP.md).
+> **Status: Phase 5 — Polish & extras complete.** Budgets, goals, recurring, insights, theming, onboarding, biometric lock, widget and multi-currency are live. See [ROADMAP.md](ROADMAP.md).
 
 FinFlow is an offline-first Android personal finance tracker built with Kotlin, Jetpack Compose + Material 3, Room, Hilt and Navigation Compose.
 
@@ -11,13 +11,13 @@ FinFlow is an offline-first Android personal finance tracker built with Kotlin, 
 | Transactions (income/expense, amount, category, date, note, payment method) | DB + repository + skeleton add/list screens | Full add/edit UI, sorting, search & filter (Phase 2) |
 | Charts (pie + line/bar, income & expenses) | Vico dependency wired | Phase 3 |
 | Reports (monthly/yearly, category totals, net balance, top categories, CSV/PDF export) | Placeholder screen | Phase 3 |
-| Budgets per category + overspend alerts | Entity + DAO + repository | UI + workers Phase 4 |
-| Financial goals + progress | Entity + DAO + repository | UI Phase 4 |
-| Recurring transactions | Rule entity + DAO | Scheduler Phase 4 |
-| Smart insights | — | Phase 4 |
-| Dark/Light theme, onboarding, biometric lock, widget, animations | Theme skeleton | Phase 5 |
+| Budgets per category + overspend alerts | Entity + DAO + repository | Monthly caps UI + notification alerts (Phase 4) |
+| Financial goals + progress | Entity + DAO + repository | CRUD + deposits UI (Phase 4) |
+| Recurring transactions | Rule entity + DAO | Rules UI + WorkManager scheduler (Phase 4) |
+| Smart insights | — | Home card: MoM movers, daily average, streaks (Phase 4) |
+| Dark/Light theme, onboarding, biometric lock, widget, animations | Theme skeleton | Settings (theme/dynamic color), onboarding, lock, Glance widget, FAB haptics (Phase 5) |
 | CI (debug APK artifact) + release | This repo builds via GitHub Actions | Signed release Phase 6 |
-| Multi-currency (IRR + USD) | `CurrencyUtils` static 42,000 rate + formatter | Editable rate Phase 5 |
+| Multi-currency (IRR + USD) | `CurrencyUtils` static 42,000 rate + formatter | Editable rate + display currency in settings, wired into Home (Phase 5) |
 
 ## Screenshots
 

@@ -12,14 +12,18 @@ object CurrencyUtils {
     /** Static demo rate: 1 USD = 42,000 IRR. User-editable in Phase 5 settings. */
     const val IRR_PER_USD = 42_000.0
 
-    fun convert(amount: Double, from: String, to: String): Double {
-        if (from == to) return amount
+    fun convert(amount: Double, from: String, to: String): Double =
+        convertWithRate(amount, from, to, IRR_PER_USD)
+
+    /** Conversion with an explicit rate (Phase 5: the rate is user-editable). */
+    fun convertWithRate(amount: Double, from: String, to: String, irrPerUsd: Double): Double {
+        if (from == to || irrPerUsd <= 0) return amount
         val inIrr = when (from) {
-            "USD" -> amount * IRR_PER_USD
+            "USD" -> amount * irrPerUsd
             else -> amount // IRR and unknown codes treated as IRR
         }
         return when (to) {
-            "USD" -> inIrr / IRR_PER_USD
+            "USD" -> inIrr / irrPerUsd
             else -> inIrr
         }
     }

@@ -32,15 +32,15 @@ Delivery is split into 6 phases. Each phase ends with a conventional commit, a p
 - [x] Smart insights: MoM deltas ("32% more on Food"), daily average, streaks
 - [x] Commit + push: `feat(advanced): phase 4 ...`
 
-## Phase 5 — Polish & Extras ⬜
-- [ ] Dark/Light (+ dynamic color) theme settings
-- [ ] Onboarding flow + beautiful empty states
-- [ ] Biometric app lock
-- [ ] Glance home-screen widget (balance + today's spending)
-- [ ] Haptics, micro-interactions, motion
-- [ ] Multi-currency settings (IRR/USD editable rate)
-- [ ] Real screenshots in README
-- [ ] Commit + push: `feat(polish): phase 5 ...`
+## Phase 5 — Polish & Extras ✅
+- [x] Dark/Light (+ dynamic color) theme settings
+- [x] Onboarding flow + beautiful empty states
+- [x] Biometric app lock
+- [x] Glance home-screen widget (balance + today's spending)
+- [x] Haptics, micro-interactions, motion
+- [x] Multi-currency settings (IRR/USD editable rate)
+- [ ] Real screenshots in README (needs a device/emulator run — placeholders stay until then)
+- [x] Commit + push: `feat(polish): phase 5 ...`
 
 ## Phase 6 — CI/CD & Release ⬜
 - [ ] GitHub Actions: build debug APK on push to main + upload artifact (already live from Phase 1, extend with lint/unit tests)

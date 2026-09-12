@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,9 +33,10 @@ import com.finflow.app.presentation.screens.categories.CategoriesScreen
 import com.finflow.app.presentation.screens.goals.GoalsScreen
 import com.finflow.app.presentation.screens.home.HomeScreen
 import com.finflow.app.presentation.screens.more.MoreScreen
+import com.finflow.app.presentation.screens.onboarding.OnboardingScreen
 import com.finflow.app.presentation.screens.recurring.RecurringScreen
 import com.finflow.app.presentation.screens.reports.ReportsScreen
-import com.finflow.app.presentation.screens.settings.SettingsPlaceholderScreen
+import com.finflow.app.presentation.screens.settings.SettingsScreen
 import com.finflow.app.presentation.screens.transactions.TransactionsScreen
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
@@ -49,13 +52,16 @@ private val TABS = listOf(
 /**
  * Root navigation graph with bottom bar + quick-add FAB.
  * Phase 4 adds the More hub (budgets, goals, recurring, settings).
+ * Phase 5 adds onboarding as an optional start destination plus
+ * haptic feedback on the quick-add FAB.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FinFlowNavGraph() {
+fun FinFlowNavGraph(startDestination: String = Routes.HOME) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
+    val haptics = LocalHapticFeedback.current
 
     Scaffold(
         bottomBar = {
@@ -78,7 +84,10 @@ fun FinFlowNavGraph() {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(Routes.addEdit()) }
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    navController.navigate(Routes.addEdit())
+                }
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Add transaction")
             }
@@ -86,9 +95,18 @@ fun FinFlowNavGraph() {
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.HOME,
+            startDestination = startDestination,
             modifier = Modifier.padding(padding)
         ) {
+            composable(Routes.ONBOARDING) {
+                OnboardingScreen(
+                    onDone = {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable(Routes.HOME) {
                 HomeScreen(
                     onAddClick = { navController.navigate(Routes.addEdit()) },
@@ -113,7 +131,7 @@ fun FinFlowNavGraph() {
             }
             composable(Routes.CATEGORIES) { CategoriesScreen() }
             composable(Routes.REPORTS) { ReportsScreen() }
-            composable(Routes.SETTINGS) { SettingsPlaceholderScreen() }
+            composable(Routes.SETTINGS) { SettingsScreen() }
             composable(Routes.MORE) {
                 MoreScreen(
                     onBudgetsClick = { navController.navigate(Routes.BUDGETS) },

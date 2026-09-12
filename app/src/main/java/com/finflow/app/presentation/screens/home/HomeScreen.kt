@@ -47,7 +47,14 @@ fun HomeScreen(
     val recent by viewModel.recentTransactions.collectAsState()
     val categories by viewModel.categoryList.collectAsState()
     val insights by viewModel.insights.collectAsState()
+    val displayCurrency by viewModel.displayCurrency.collectAsState()
+    val irrPerUsd by viewModel.irrPerUsd.collectAsState()
     val categoryById = categories.associateBy { it.id }
+    // Totals are stored in IRR; convert once for display (Phase 5 currency).
+    fun shown(amount: Double): String = CurrencyUtils.format(
+        CurrencyUtils.convertWithRate(amount, "IRR", displayCurrency, irrPerUsd),
+        displayCurrency
+    )
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -60,13 +67,13 @@ fun HomeScreen(
             Column(Modifier.padding(20.dp)) {
                 Text("Total balance", style = MaterialTheme.typography.labelLarge)
                 Text(
-                    CurrencyUtils.format(balance, "IRR"),
+                    shown(balance),
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Income: ${CurrencyUtils.format(income, "IRR")}")
-                    Text("Expense: ${CurrencyUtils.format(expense, "IRR")}")
+                    Text("Income: ${shown(income)}")
+                    Text("Expense: ${shown(expense)}")
                 }
             }
         }
@@ -74,7 +81,7 @@ fun HomeScreen(
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Insights", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Daily average: ${CurrencyUtils.format(insights.dailyAverage, "IRR")} (30d)",
+                    "Daily average: ${shown(insights.dailyAverage)} (30d)",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(

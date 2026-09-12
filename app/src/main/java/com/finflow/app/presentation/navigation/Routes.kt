@@ -15,6 +15,7 @@ object Routes {
     const val BUDGETS = "budgets"
     const val GOALS = "goals"
     const val RECURRING = "recurring"
+    const val ONBOARDING = "onboarding"
 
     fun addEdit(id: Long = 0, type: String = "EXPENSE") = "add_edit?id=$id&type=$type"
 }
