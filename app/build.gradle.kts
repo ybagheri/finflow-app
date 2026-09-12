@@ -90,6 +90,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.datastore.preferences)
 
+    // Recurring transactions (Phase 4 WorkManager materialization)
+    implementation(libs.androidx.work.runtime.ktx)
+
     // Charts (Phase 3, declared early so API is stable)
     implementation(libs.vico.compose)
     implementation(libs.vico.views)

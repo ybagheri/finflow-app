@@ -22,6 +22,7 @@ interface GoalRepository {
 /** Contract for recurring-transaction rules. Scheduling lands in Phase 4. */
 interface RecurringRepository {
     fun observeActive(): Flow<List<RecurringRule>>
+    fun observeAll(): Flow<List<RecurringRule>>
     suspend fun upsert(rule: RecurringRule): Long
     suspend fun deleteById(id: Long)
 }

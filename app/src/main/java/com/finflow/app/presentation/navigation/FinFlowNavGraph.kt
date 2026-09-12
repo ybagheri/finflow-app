@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,8 +26,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.finflow.app.presentation.screens.addedit.AddEditScreen
+import com.finflow.app.presentation.screens.budgets.BudgetsScreen
 import com.finflow.app.presentation.screens.categories.CategoriesScreen
+import com.finflow.app.presentation.screens.goals.GoalsScreen
 import com.finflow.app.presentation.screens.home.HomeScreen
+import com.finflow.app.presentation.screens.more.MoreScreen
+import com.finflow.app.presentation.screens.recurring.RecurringScreen
 import com.finflow.app.presentation.screens.reports.ReportsScreen
 import com.finflow.app.presentation.screens.settings.SettingsPlaceholderScreen
 import com.finflow.app.presentation.screens.transactions.TransactionsScreen
@@ -37,13 +42,13 @@ private val TABS = listOf(
     Tab(Routes.HOME, "Home", Icons.Filled.Home),
     Tab(Routes.TRANSACTIONS, "Activity", Icons.Filled.Receipt),
     Tab(Routes.CATEGORIES, "Categories", Icons.Filled.Category),
-    Tab(Routes.REPORTS, "Reports", Icons.Filled.PieChart)
+    Tab(Routes.REPORTS, "Reports", Icons.Filled.PieChart),
+    Tab(Routes.MORE, "More", Icons.Filled.MoreHoriz)
 )
 
 /**
- * Root navigation graph with bottom bar + quick-add FAB skeleton.
- * Feature screens are filled in during Phases 2-4; placeholders keep
- * navigation compilable and demo-able from day one.
+ * Root navigation graph with bottom bar + quick-add FAB.
+ * Phase 4 adds the More hub (budgets, goals, recurring, settings).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,6 +114,17 @@ fun FinFlowNavGraph() {
             composable(Routes.CATEGORIES) { CategoriesScreen() }
             composable(Routes.REPORTS) { ReportsScreen() }
             composable(Routes.SETTINGS) { SettingsPlaceholderScreen() }
+            composable(Routes.MORE) {
+                MoreScreen(
+                    onBudgetsClick = { navController.navigate(Routes.BUDGETS) },
+                    onGoalsClick = { navController.navigate(Routes.GOALS) },
+                    onRecurringClick = { navController.navigate(Routes.RECURRING) },
+                    onSettingsClick = { navController.navigate(Routes.SETTINGS) }
+                )
+            }
+            composable(Routes.BUDGETS) { BudgetsScreen() }
+            composable(Routes.GOALS) { GoalsScreen() }
+            composable(Routes.RECURRING) { RecurringScreen() }
         }
     }
 }

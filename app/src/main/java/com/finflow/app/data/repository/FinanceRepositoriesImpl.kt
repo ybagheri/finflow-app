@@ -84,6 +84,9 @@ class RecurringRepositoryImpl @Inject constructor(
     override fun observeActive(): Flow<List<RecurringRule>> =
         dao.observeActive().map { it.map { e -> e.toDomain() } }
 
+    override fun observeAll(): Flow<List<RecurringRule>> =
+        dao.observeAll().map { it.map { e -> e.toDomain() } }
+
     override suspend fun upsert(rule: RecurringRule): Long = dao.upsert(rule.toEntity())
     override suspend fun deleteById(id: Long) = dao.deleteById(id)
 }

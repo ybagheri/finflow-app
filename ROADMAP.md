@@ -25,12 +25,12 @@ Delivery is split into 6 phases. Each phase ends with a conventional commit, a p
 - [x] Export CSV + PDF (Storage Access Framework share)
 - [x] Commit + push: `feat(reports): phase 3 ...`
 
-## Phase 4 — Advanced Features ⬜
-- [ ] Budgets: monthly caps, progress bars, overspend alerts (notifications)
-- [ ] Goals: CRUD + progress tracking + deposits
-- [ ] Recurring transactions: rules CRUD + WorkManager materialization
-- [ ] Smart insights: MoM deltas ("32% more on Food"), daily average, streaks
-- [ ] Commit + push: `feat(advanced): phase 4 ...`
+## Phase 4 — Advanced Features ✅
+- [x] Budgets: monthly caps, progress bars, overspend alerts (notifications)
+- [x] Goals: CRUD + progress tracking + deposits
+- [x] Recurring transactions: rules CRUD + WorkManager materialization
+- [x] Smart insights: MoM deltas ("32% more on Food"), daily average, streaks
+- [x] Commit + push: `feat(advanced): phase 4 ...`
 
 ## Phase 5 — Polish & Extras ⬜
 - [ ] Dark/Light (+ dynamic color) theme settings

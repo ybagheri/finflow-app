@@ -31,7 +31,8 @@ import com.finflow.app.presentation.components.TransactionRow
 
 /**
  * Phase 2 home: balance card fed by Room totals plus a recent-transactions
- * preview. Charts teaser and insights land in Phases 3-4.
+ * preview. Phase 4 adds the smart-insights card (daily average, streak,
+ * biggest month-over-month mover).
  */
 @Composable
 fun HomeScreen(
@@ -45,6 +46,7 @@ fun HomeScreen(
     val expense by viewModel.expenseTotal.collectAsState()
     val recent by viewModel.recentTransactions.collectAsState()
     val categories by viewModel.categoryList.collectAsState()
+    val insights by viewModel.insights.collectAsState()
     val categoryById = categories.associateBy { it.id }
 
     Column(
@@ -65,6 +67,32 @@ fun HomeScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text("Income: ${CurrencyUtils.format(income, "IRR")}")
                     Text("Expense: ${CurrencyUtils.format(expense, "IRR")}")
+                }
+            }
+        }
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Insights", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Daily average: ${CurrencyUtils.format(insights.dailyAverage, "IRR")} (30d)",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    if (insights.streakDays > 0) "Logging streak: ${insights.streakDays}d in a row"
+                    else "Log a transaction to start a streak",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                val delta = insights.topDelta
+                if (delta != null) {
+                    val name = insights.topDeltaCategoryName ?: "Top category"
+                    val change = delta.percentChange
+                    Text(
+                        if (change == null) "New this month: $name"
+                        else if (change >= 0) "${change.toInt()}% more on $name vs last month"
+                        else "${(-change).toInt()}% less on $name vs last month",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

@@ -40,6 +40,9 @@ interface RecurringRuleDao {
     @Query("SELECT * FROM recurring_rules WHERE isActive = 1 ORDER BY startEpochDay ASC")
     fun observeActive(): Flow<List<RecurringRuleEntity>>
 
+    @Query("SELECT * FROM recurring_rules ORDER BY isActive DESC, startEpochDay ASC")
+    fun observeAll(): Flow<List<RecurringRuleEntity>>
+
     @Upsert
     suspend fun upsert(entity: RecurringRuleEntity): Long
 

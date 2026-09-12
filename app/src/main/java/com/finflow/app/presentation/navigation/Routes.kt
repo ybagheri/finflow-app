@@ -11,6 +11,10 @@ object Routes {
     const val CATEGORIES = "categories"
     const val REPORTS = "reports"
     const val SETTINGS = "settings"
+    const val MORE = "more"
+    const val BUDGETS = "budgets"
+    const val GOALS = "goals"
+    const val RECURRING = "recurring"
 
     fun addEdit(id: Long = 0, type: String = "EXPENSE") = "add_edit?id=$id&type=$type"
 }
