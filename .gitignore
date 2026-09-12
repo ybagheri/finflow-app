@@ -1,0 +1,15 @@
+# Gradle / Android
+.gradle/
+build/
+**/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+# Room schemas are kept (exportSchema=true)
+# app/schemas/ is intentionally committed
+# Keystore secrets — never commit real keys
+*.jks
+*.keystore
+keystore.properties
+google-services.json
