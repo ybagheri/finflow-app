@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -34,7 +36,7 @@ android {
         if (hasReleaseKeystore) {
             create("release") {
                 if (keystorePropsFile.exists()) {
-                    val props = java.util.Properties()
+                    val props = Properties()
                     keystorePropsFile.inputStream().use { props.load(it) }
                     storeFile = file(props.getProperty("storeFile", "finflow-release.jks"))
                     storePassword = props.getProperty("storePassword")
