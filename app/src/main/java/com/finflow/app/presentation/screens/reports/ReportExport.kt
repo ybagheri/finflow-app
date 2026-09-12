@@ -63,7 +63,7 @@ object ReportExport {
         val bodyPaint = Paint().apply { textSize = 12f }
         val lineHeight = 20f
 
-        var page = document.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).build())
+        var page = document.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create())
         var canvas = page.canvas
         var pageNumber = 1
         var y = margin + 10f
@@ -71,7 +71,7 @@ object ReportExport {
         fun newPage() {
             document.finishPage(page)
             pageNumber += 1
-            page = document.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).build())
+            page = document.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create())
             canvas = page.canvas
             y = margin + 10f
         }

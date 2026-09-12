@@ -71,9 +71,26 @@ class ReportsViewModel @Inject constructor(
     private val allCategories: StateFlow<List<Category>> = categories.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    private data class ReportFilters(
+        val period: ReportPeriod,
+        val month: YearMonth,
+        val year: Int,
+        val pieType: TransactionType
+    )
+
+    private val filters: StateFlow<ReportFilters> =
+        combine(_period, _month, _year, _pieType) { period, month, year, pieType ->
+            ReportFilters(period, month, year, pieType)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            ReportFilters(ReportPeriod.MONTH, YearMonth.now(), LocalDate.now().year, TransactionType.EXPENSE)
+        )
+
     val uiState: StateFlow<ReportUiState> =
-        combine(allTransactions, allCategories, _period, _month, _year, _pieType) {
-            txs, cats, period, month, year, pieType ->
+        combine(allTransactions, allCategories, filters) {
+            txs, cats, f ->
+            val (period, month, year, pieType) = f
             val inScope = when (period) {
                 ReportPeriod.MONTH -> ReportUtils.inMonth(txs, month)
                 ReportPeriod.YEAR -> ReportUtils.inYear(txs, year)

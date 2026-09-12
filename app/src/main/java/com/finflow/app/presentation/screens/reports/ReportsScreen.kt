@@ -59,8 +59,9 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val categoryById = state.categories.associateBy { it.id }
+    val fallbackCategoryColor = MaterialTheme.colorScheme.primary
     val colorOf: (Long) -> Color = { id ->
-        categoryById[id]?.let { Color(it.colorArgb) } ?: MaterialTheme.colorScheme.primary
+        categoryById[id]?.let { Color(it.colorArgb) } ?: fallbackCategoryColor
     }
     val nameOf: (Long) -> String = { id ->
         categoryById[id]?.name ?: "Unknown"

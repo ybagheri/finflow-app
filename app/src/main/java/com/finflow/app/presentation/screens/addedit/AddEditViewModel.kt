@@ -14,6 +14,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -114,7 +115,7 @@ class AddEditViewModel @Inject constructor(
             resolved = availableCategories.value.firstOrNull()?.id
                 ?: run {
                     categories.seedDefaultsIfEmpty()
-                    kotlinx.coroutines.flow.first(categories.observeByType(_type.value)).firstOrNull()?.id
+                    categories.observeByType(_type.value).first().firstOrNull()?.id
                 }
             if (resolved == null) {
                 _error.value = "No category available — please retry"
