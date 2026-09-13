@@ -3,6 +3,7 @@ package com.finflow.app.presentation.screens.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.finflow.app.core.util.CategoryDelta
+import com.finflow.app.core.util.CurrencyUtils
 import com.finflow.app.core.util.InsightsUtils
 import com.finflow.app.core.util.ReportUtils
 import com.finflow.app.data.prefs.UserPreferences
@@ -64,11 +65,11 @@ class HomeViewModel @Inject constructor(
     val categoryList = categoriesRepo.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Phase 5 display currency + rate for converting home totals. */
+    /** Phase 5/6 display currency + rates for converting home totals. */
     val displayCurrency: StateFlow<String> = prefs.displayCurrency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "IRR")
-    val irrPerUsd: StateFlow<Double> = prefs.irrPerUsd
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 42_000.0)
+    val ratesToIrr: StateFlow<Map<String, Double>> = prefs.ratesToIrr
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CurrencyUtils.DEFAULT_RATES_TO_IRR)
 
     /** Full transaction list backing the smart-insights card. */
     private val allTransactions: StateFlow<List<Transaction>> =

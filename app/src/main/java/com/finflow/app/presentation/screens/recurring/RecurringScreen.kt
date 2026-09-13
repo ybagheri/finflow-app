@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.CurrencyUtils
 import com.finflow.app.core.util.DateUtils
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.data.work.RecurringScheduler
 import com.finflow.app.domain.model.RecurrenceInterval
 import com.finflow.app.domain.model.RecurringRule
@@ -67,6 +68,7 @@ import java.time.ZoneId
 @Composable
 fun RecurringScreen(viewModel: RecurringViewModel = hiltViewModel()) {
     val rules by viewModel.rules.collectAsState()
+    val language = LocalAppLanguage.current
     val categories by viewModel.categories.collectAsState()
     val categoryById = categories.associateBy { it.id }
     var editing by remember { mutableStateOf<RecurringRule?>(null) }
@@ -118,7 +120,7 @@ fun RecurringScreen(viewModel: RecurringViewModel = hiltViewModel()) {
                         val catName = categoryById[rule.categoryId]?.name ?: rule.type.name
                         val nextDue = remember(rule) {
                             RecurringScheduler.nextDueAfter(rule)?.let {
-                                DateUtils.formatEpochDay(it.toEpochDay())
+                                DateUtils.formatForDisplay(it.toEpochDay(), language)
                             } ?: "ended"
                         }
                         Card(modifier = Modifier.fillMaxWidth()) {
@@ -218,6 +220,7 @@ private fun RuleDialog(
     ) -> Unit
 ) {
     var amount by remember { mutableStateOf(existing?.amount?.toString().orEmpty()) }
+    val language = LocalAppLanguage.current
     var type by remember { mutableStateOf(existing?.type ?: TransactionType.EXPENSE) }
     var categoryId by remember { mutableStateOf(existing?.categoryId ?: 0L) }
     var interval by remember { mutableStateOf(existing?.interval ?: RecurrenceInterval.MONTHLY) }
@@ -284,12 +287,12 @@ private fun RuleDialog(
                     OutlinedButton(
                         onClick = { picking = "start" },
                         modifier = Modifier.weight(1f)
-                    ) { Text("From ${DateUtils.formatEpochDay(start, "MMM d, yyyy")}") }
+                    ) { Text("From ${DateUtils.formatForDisplay(start, language)}") }
                     OutlinedButton(
                         onClick = { picking = "end" },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(end?.let { DateUtils.formatEpochDay(it, "MMM d, yyyy") } ?: "No end")
+                        Text(end?.let { DateUtils.formatForDisplay(it, language) } ?: "No end")
                     }
                 }
                 if (end != null) {

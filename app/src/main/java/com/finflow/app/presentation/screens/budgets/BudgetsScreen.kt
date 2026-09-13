@@ -53,8 +53,16 @@ import java.util.Locale
 fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
     val rows by viewModel.rows.collectAsState()
     val month by viewModel.month.collectAsState()
+    val displayCurrency by viewModel.displayCurrency.collectAsState()
+    val ratesToIrr by viewModel.ratesToIrr.collectAsState()
     var editing by remember { mutableStateOf<BudgetRow?>(null) }
     val context = LocalContext.current
+
+    // Totals are stored in IRR; convert once for display (Phase 5/6 currency).
+    fun shown(amount: Double): String = CurrencyUtils.format(
+        CurrencyUtils.convertWithRates(amount, "IRR", displayCurrency, ratesToIrr),
+        displayCurrency
+    )
 
     // Ask for the notification runtime permission once (Android 13+).
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -153,8 +161,7 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    "${CurrencyUtils.format(row.spent, "IRR")} / " +
-                                        CurrencyUtils.format(row.limit!!, "IRR"),
+                                    "${shown(row.spent)} / " + shown(row.limit!!),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 Text(
@@ -168,7 +175,7 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
                             TextButton(onClick = { editing = row }) { Text("Edit cap") }
                         } else {
                             Text(
-                                "Spent ${CurrencyUtils.format(row.spent, "IRR")} • no cap set",
+                                "Spent ${shown(row.spent)} • no cap set",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -200,7 +207,7 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        "Spent so far: ${CurrencyUtils.format(row.spent, "IRR")}",
+                        "Spent so far: ${shown(row.spent)}",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }

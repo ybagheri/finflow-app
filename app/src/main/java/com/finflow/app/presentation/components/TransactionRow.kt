@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.finflow.app.core.util.CurrencyUtils
 import com.finflow.app.core.util.DateUtils
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.domain.model.Category
 import com.finflow.app.domain.model.Transaction
 import com.finflow.app.domain.model.TransactionType
@@ -33,6 +34,7 @@ fun TransactionRow(
     val isIncome = transaction.type == TransactionType.INCOME
     val amountColor = if (isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
     val sign = if (isIncome) "+" else "-"
+    val language = LocalAppLanguage.current
     ListItem(
         modifier = modifier,
         headlineContent = {
@@ -43,7 +45,7 @@ fun TransactionRow(
                 buildString {
                     append(category?.name ?: transaction.type.name)
                     append(" • ")
-                    append(DateUtils.formatEpochDay(transaction.dateEpochDay))
+                    append(DateUtils.formatForDisplay(transaction.dateEpochDay, language))
                     transaction.paymentMethod?.takeIf { it.isNotBlank() }?.let {
                         append(" • ")
                         append(it)

@@ -31,19 +31,23 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
 
 /**
  * Phase 5 settings: theme mode + dynamic color, display currency with an
- * editable IRR/USD rate, and the biometric app lock toggle.
+ * editable rate, the biometric app lock toggle. Phase 6 adds the app
+ * language switch (same choice offered once at onboarding, editable here).
  */
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val themeMode by viewModel.themeMode.collectAsState()
     val dynamicColor by viewModel.dynamicColor.collectAsState()
+    val appLanguage by viewModel.appLanguage.collectAsState()
     val displayCurrency by viewModel.displayCurrency.collectAsState()
-    val irrPerUsd by viewModel.irrPerUsd.collectAsState()
+    val rate by viewModel.rateFor(displayCurrency).collectAsState(initial = 1.0)
     val biometricLock by viewModel.biometricLock.collectAsState()
     val context = LocalContext.current
+    val fa = appLanguage == LANGUAGE_PERSIAN
 
     val biometricAvailable = remember {
         BiometricManager.from(context).canAuthenticate(
@@ -55,11 +59,43 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Settings", style = MaterialTheme.typography.headlineSmall)
+        Text(if (fa) "تنظیمات" else "Settings", style = MaterialTheme.typography.headlineSmall)
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Appearance", style = MaterialTheme.typography.titleMedium)
+                Text(if (fa) "زبان" else "Language", style = MaterialTheme.typography.titleMedium)
+                viewModel.languageOptions.forEach { option ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .selectable(
+                                selected = appLanguage == option.value,
+                                role = Role.RadioButton,
+                                onClick = {
+                                    viewModel.setLanguage(option.value) {
+                                        (context as? android.app.Activity)?.recreate()
+                                    }
+                                }
+                            )
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = appLanguage == option.value,
+                            onClick = {
+                                viewModel.setLanguage(option.value) {
+                                    (context as? android.app.Activity)?.recreate()
+                                }
+                            }
+                        )
+                        Text(option.label)
+                    }
+                }
+            }
+        }
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(if (fa) "ظاهر" else "Appearance", style = MaterialTheme.typography.titleMedium)
                 viewModel.themeOptions.forEach { option ->
                     Row(
                         modifier = Modifier.fillMaxWidth()
@@ -83,7 +119,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Dynamic color (Android 12+)")
+                    Text(if (fa) "رنگ پویا (اندروید ۱۲+)" else "Dynamic color (Android 12+)")
                     Switch(
                         checked = dynamicColor,
                         onCheckedChange = { viewModel.setDynamicColor(it) }
@@ -94,8 +130,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Currency", style = MaterialTheme.typography.titleMedium)
-                viewModel.currencyOptions.forEach { option ->
+                Text(if (fa) "واحد پول" else "Currency", style = MaterialTheme.typography.titleMedium)
+                viewModel.currencyOptions(appLanguage).forEach { option ->
                     Row(
                         modifier = Modifier.fillMaxWidth()
                             .selectable(
@@ -113,40 +149,50 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                         Text(option.label)
                     }
                 }
-                var rate by remember(irrPerUsd) { mutableStateOf(irrPerUsd.toString()) }
-                var rateError by remember { mutableStateOf<String?>(null) }
-                var savedTick by remember { mutableStateOf(false) }
-                OutlinedTextField(
-                    value = rate,
-                    onValueChange = { rate = it; rateError = null; savedTick = false },
-                    label = { Text("IRR per 1 USD") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    isError = rateError != null,
-                    supportingText = {
-                        Text(rateError ?: if (savedTick) "Saved" else "Used to convert totals")
-                    },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                TextButton(onClick = {
-                    viewModel.setRate(
-                        rate,
-                        onDone = { savedTick = true },
-                        onError = { rateError = it }
+                if (displayCurrency != "IRR") {
+                    var rateText by remember(rate, displayCurrency) { mutableStateOf(rate.toString()) }
+                    var rateError by remember(displayCurrency) { mutableStateOf<String?>(null) }
+                    var savedTick by remember(displayCurrency) { mutableStateOf(false) }
+                    OutlinedTextField(
+                        value = rateText,
+                        onValueChange = { rateText = it; rateError = null; savedTick = false },
+                        label = { Text(if (fa) "ریال به ازای هر واحد $displayCurrency" else "IRR per 1 $displayCurrency") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        isError = rateError != null,
+                        supportingText = {
+                            Text(
+                                rateError
+                                    ?: if (savedTick) {
+                                        if (fa) "ذخیره شد" else "Saved"
+                                    } else {
+                                        if (fa) "برای تبدیل مجموع‌ها استفاده می‌شود" else "Used to convert totals"
+                                    }
+                            )
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                }) { Text("Save rate") }
+                    TextButton(onClick = {
+                        viewModel.setRate(
+                            displayCurrency,
+                            rateText,
+                            onDone = { savedTick = true },
+                            onError = { rateError = it }
+                        )
+                    }) { Text(if (fa) "ذخیره نرخ" else "Save rate") }
+                }
             }
         }
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Security", style = MaterialTheme.typography.titleMedium)
+                Text(if (fa) "امنیت" else "Security", style = MaterialTheme.typography.titleMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Biometric app lock")
+                    Text(if (fa) "قفل بیومتریک برنامه" else "Biometric app lock")
                     Switch(
                         checked = biometricLock,
                         enabled = biometricAvailable,
@@ -155,7 +201,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 }
                 if (!biometricAvailable) {
                     Text(
-                        "No biometrics enrolled on this device.",
+                        if (fa) "هیچ بیومتریکی روی این دستگاه ثبت نشده است." else "No biometrics enrolled on this device.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.DateUtils
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.domain.model.TransactionType
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -60,6 +61,7 @@ fun AddEditScreen(
     val saving by viewModel.saving.collectAsState()
     val categories by viewModel.availableCategories.collectAsState()
     val scope = rememberCoroutineScope()
+    val language = LocalAppLanguage.current
     var showDatePicker by remember { mutableStateOf(false) }
     var categoryMenu by remember { mutableStateOf(false) }
     var paymentMenu by remember { mutableStateOf(false) }
@@ -117,7 +119,7 @@ fun AddEditScreen(
         }
         // Date picker
         OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth()) {
-            Text(DateUtils.formatEpochDay(dateEpochDay))
+            Text(DateUtils.formatForDisplay(dateEpochDay, language))
         }
         if (showDatePicker) {
             val pickerState = rememberDatePickerState(

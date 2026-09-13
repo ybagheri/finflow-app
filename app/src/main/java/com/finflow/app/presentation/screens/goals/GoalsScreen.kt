@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.CurrencyUtils
 import com.finflow.app.core.util.DateUtils
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.domain.model.Goal
 import com.finflow.app.presentation.components.EmptyState
 import java.time.Instant
@@ -57,6 +58,7 @@ import java.time.ZoneId
 @Composable
 fun GoalsScreen(viewModel: GoalsViewModel = hiltViewModel()) {
     val goals by viewModel.goals.collectAsState()
+    val language = LocalAppLanguage.current
     var editing by remember { mutableStateOf<Goal?>(null) }
     var creating by remember { mutableStateOf(false) }
     var depositing by remember { mutableStateOf<Goal?>(null) }
@@ -133,7 +135,7 @@ fun GoalsScreen(viewModel: GoalsViewModel = hiltViewModel()) {
                                 }
                                 goal.deadlineEpochDay?.let { deadline ->
                                     Text(
-                                        "Due ${DateUtils.formatEpochDay(deadline)}",
+                                        "Due ${DateUtils.formatForDisplay(deadline, language)}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -215,6 +217,7 @@ private fun GoalDialog(
     onSave: (title: String, target: Double, deadline: Long?, note: String, onError: (String) -> Unit) -> Unit
 ) {
     var title by remember { mutableStateOf(existing?.title.orEmpty()) }
+    val language = LocalAppLanguage.current
     var target by remember { mutableStateOf(existing?.targetAmount?.toString().orEmpty()) }
     var note by remember { mutableStateOf(existing?.note.orEmpty()) }
     var deadline by remember { mutableStateOf(existing?.deadlineEpochDay) }
@@ -245,7 +248,7 @@ private fun GoalDialog(
                     onClick = { showPicker = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(deadline?.let { DateUtils.formatEpochDay(it) } ?: "Deadline (optional)")
+                    Text(deadline?.let { DateUtils.formatForDisplay(it, language) } ?: "Deadline (optional)")
                 }
                 if (deadline != null) {
                     TextButton(onClick = { deadline = null }) { Text("Clear deadline") }

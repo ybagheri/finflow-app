@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.CurrencyUtils
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.core.util.ReportUtils
 import com.finflow.app.domain.model.TransactionType
 import java.time.format.TextStyle
@@ -55,7 +56,10 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
     val month by viewModel.month.collectAsState()
     val year by viewModel.year.collectAsState()
     val pieType by viewModel.pieType.collectAsState()
+    val displayCurrency by viewModel.displayCurrency.collectAsState()
+    val ratesToIrr by viewModel.ratesToIrr.collectAsState()
     val context = LocalContext.current
+    val language = LocalAppLanguage.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val categoryById = state.categories.associateBy { it.id }
@@ -66,6 +70,11 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
     val nameOf: (Long) -> String = { id ->
         categoryById[id]?.name ?: "Unknown"
     }
+    // Totals are stored in IRR; convert once for display (Phase 5/6 currency).
+    fun shown(amount: Double): String = CurrencyUtils.format(
+        CurrencyUtils.convertWithRates(amount, "IRR", displayCurrency, ratesToIrr),
+        displayCurrency
+    )
 
     val csvLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
@@ -98,10 +107,11 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
                     ReportExport.writePdf(
                         context = context,
                         uri = uri,
-                        title = viewModel.exportTitle(state),
+                        title = viewModel.exportTitle(state, language),
                         summary = state.summary,
                         topCategories = state.categoryTotals.take(10).map { nameOf(it.categoryId) to it.total },
-                        transactions = state.periodTransactions
+                        transactions = state.periodTransactions,
+                        languageCode = language
                     )
                 }.onFailure {
                     snackbar.showSnackbar("PDF export failed: ${it.message}")
@@ -180,11 +190,11 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
             ) {
                 Text("Net balance", style = MaterialTheme.typography.labelLarge)
                 Text(
-                    CurrencyUtils.format(state.summary.net, "IRR"),
+                    shown(state.summary.net),
                     style = MaterialTheme.typography.headlineMedium
                 )
-                Text("Income: ${CurrencyUtils.format(state.summary.income, "IRR")}")
-                Text("Expense: ${CurrencyUtils.format(state.summary.expense, "IRR")}")
+                Text("Income: ${shown(state.summary.income)}")
+                Text("Expense: ${shown(state.summary.expense)}")
                 Text(
                     "${state.summary.count} transaction${if (state.summary.count == 1) "" else "s"}" +
                         momSuffix(state.summary.net, state.previousSummary.net),
@@ -244,7 +254,7 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("${index + 1}. ${nameOf(total.categoryId)} (${total.count})")
-                        Text(CurrencyUtils.format(total.total, "IRR"))
+                        Text(shown(total.total))
                     }
                     if (index < minOf(4, state.categoryTotals.size - 1)) {
                         HorizontalDivider()

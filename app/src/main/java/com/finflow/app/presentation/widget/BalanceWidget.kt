@@ -32,7 +32,7 @@ private data class WidgetSnapshot(
     val balance: Double,
     val todaySpent: Double,
     val currency: String,
-    val irrPerUsd: Double
+    val ratesToIrr: Map<String, Double>
 )
 
 /**
@@ -48,14 +48,14 @@ class BalanceWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val snapshot = loadSnapshot(context)
         val balance = CurrencyUtils.format(
-            CurrencyUtils.convertWithRate(
-                snapshot.balance, "IRR", snapshot.currency, snapshot.irrPerUsd
+            CurrencyUtils.convertWithRates(
+                snapshot.balance, "IRR", snapshot.currency, snapshot.ratesToIrr
             ),
             snapshot.currency
         )
         val today = CurrencyUtils.format(
-            CurrencyUtils.convertWithRate(
-                snapshot.todaySpent, "IRR", snapshot.currency, snapshot.irrPerUsd
+            CurrencyUtils.convertWithRates(
+                snapshot.todaySpent, "IRR", snapshot.currency, snapshot.ratesToIrr
             ),
             snapshot.currency
         )
@@ -79,7 +79,7 @@ class BalanceWidget : GlanceAppWidget() {
             WidgetPrefsEntryPoint::class.java
         )
         val currency = entry.prefs().displayCurrency.first()
-        val rate = entry.prefs().irrPerUsd.first()
+        val rates = entry.prefs().ratesToIrr.first()
         val db = Room.databaseBuilder(appContext, FinFlowDatabase::class.java, FinFlowDatabase.NAME)
             .build()
         try {
@@ -90,12 +90,12 @@ class BalanceWidget : GlanceAppWidget() {
             val todaySpent = dao.observeByDateDesc().first()
                 .filter { it.type == TransactionType.EXPENSE.name && it.dateEpochDay == today }
                 .sumOf { it.amount }
-            WidgetSnapshot(income - expense, todaySpent, currency, rate)
+            WidgetSnapshot(income - expense, todaySpent, currency, rates)
         } finally {
             runCatching { db.close() }
         }
     }.getOrElse {
-        WidgetSnapshot(0.0, 0.0, "IRR", CurrencyUtils.IRR_PER_USD)
+        WidgetSnapshot(0.0, 0.0, "IRR", CurrencyUtils.DEFAULT_RATES_TO_IRR)
     }
 }
 

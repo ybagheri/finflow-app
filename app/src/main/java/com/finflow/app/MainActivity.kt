@@ -1,5 +1,6 @@
 package com.finflow.app
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import com.finflow.app.core.util.LocalAppLanguage
+import com.finflow.app.core.util.LocaleHelper
 import com.finflow.app.data.prefs.UserPreferences
 import com.finflow.app.presentation.navigation.FinFlowNavGraph
 import com.finflow.app.presentation.navigation.Routes
@@ -47,6 +51,10 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var prefs: UserPreferences
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -63,50 +71,55 @@ class MainActivity : FragmentActivity() {
             val lockEnabled by produceState(initialValue = false) {
                 prefs.biometricLock.collect { value = it }
             }
+            val appLanguage by produceState(initialValue = LocaleHelper.getPersisted(this@MainActivity) ?: "en") {
+                prefs.appLanguage.collect { value = it ?: "en" }
+            }
             val mode = runCatching { ThemeMode.valueOf(themeName) }
                 .getOrDefault(ThemeMode.SYSTEM)
 
-            FinFlowTheme(mode = mode, dynamicColor = dynamicColor) {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    if (onboarded == null) {
-                        // Splash while DataStore loads; avoids a wrong start destination.
-                    } else if (lockEnabled) {
-                        var unlocked by remember { mutableStateOf(false) }
-                        var failed by remember { mutableStateOf(false) }
-                        LaunchedEffect(Unit) {
-                            authenticate(
-                                onSuccess = { unlocked = true },
-                                onError = { failed = true }
-                            )
-                        }
-                        if (unlocked) {
+            CompositionLocalProvider(LocalAppLanguage provides appLanguage) {
+                FinFlowTheme(mode = mode, dynamicColor = dynamicColor) {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        if (onboarded == null) {
+                            // Splash while DataStore loads; avoids a wrong start destination.
+                        } else if (lockEnabled) {
+                            var unlocked by remember { mutableStateOf(false) }
+                            var failed by remember { mutableStateOf(false) }
+                            LaunchedEffect(Unit) {
+                                authenticate(
+                                    onSuccess = { unlocked = true },
+                                    onError = { failed = true }
+                                )
+                            }
+                            if (unlocked) {
+                                FinFlowNavGraph(
+                                    startDestination = if (onboarded == true) Routes.HOME else Routes.ONBOARDING
+                                )
+                            } else {
+                                Column(
+                                    Modifier.fillMaxSize().padding(24.dp),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        if (failed) "Authentication needed" else "FinFlow is locked",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Spacer(Modifier.height(12.dp))
+                                    Button(onClick = {
+                                        failed = false
+                                        authenticate(
+                                            onSuccess = { unlocked = true },
+                                            onError = { failed = true }
+                                        )
+                                    }) { Text("Unlock") }
+                                }
+                            }
+                        } else {
                             FinFlowNavGraph(
                                 startDestination = if (onboarded == true) Routes.HOME else Routes.ONBOARDING
                             )
-                        } else {
-                            Column(
-                                Modifier.fillMaxSize().padding(24.dp),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    if (failed) "Authentication needed" else "FinFlow is locked",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                Button(onClick = {
-                                    failed = false
-                                    authenticate(
-                                        onSuccess = { unlocked = true },
-                                        onError = { failed = true }
-                                    )
-                                }) { Text("Unlock") }
-                            }
                         }
-                    } else {
-                        FinFlowNavGraph(
-                            startDestination = if (onboarded == true) Routes.HOME else Routes.ONBOARDING
-                        )
                     }
                 }
             }

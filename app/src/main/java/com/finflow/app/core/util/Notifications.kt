@@ -35,7 +35,9 @@ object Notifications {
         notificationId: Int,
         categoryName: String,
         spent: Double,
-        limit: Double
+        limit: Double,
+        currencyCode: String = "IRR",
+        ratesToIrr: Map<String, Double> = emptyMap()
     ) {
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -46,12 +48,15 @@ object Notifications {
             ) {
                 return@runCatching
             }
+            // Totals are stored in IRR; convert once for display (Phase 5/6 currency).
+            val shownSpent = CurrencyUtils.convertWithRates(spent, "IRR", currencyCode, ratesToIrr)
+            val shownLimit = CurrencyUtils.convertWithRates(limit, "IRR", currencyCode, ratesToIrr)
             val notification = NotificationCompat.Builder(context, CHANNEL_BUDGETS)
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
                 .setContentTitle("Over budget: $categoryName")
                 .setContentText(
-                    "Spent ${CurrencyUtils.format(spent, "IRR")} " +
-                        "of ${CurrencyUtils.format(limit, "IRR")} cap"
+                    "Spent ${CurrencyUtils.format(shownSpent, currencyCode)} " +
+                        "of ${CurrencyUtils.format(shownLimit, currencyCode)} cap"
                 )
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)

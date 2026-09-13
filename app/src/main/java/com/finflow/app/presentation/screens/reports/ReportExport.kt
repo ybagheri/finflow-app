@@ -52,7 +52,8 @@ object ReportExport {
         title: String,
         summary: PeriodSummary,
         topCategories: List<Pair<String, Double>>,
-        transactions: List<Transaction>
+        transactions: List<Transaction>,
+        languageCode: String = "en"
     ) {
         val document = PdfDocument()
         val pageWidth = 595
@@ -83,7 +84,7 @@ object ReportExport {
 
         drawLine(title, titlePaint)
         y += 6f
-        drawLine("Generated ${DateUtils.formatEpochDay(DateUtils.todayEpochDay())}", bodyPaint)
+        drawLine("Generated ${DateUtils.formatForDisplay(DateUtils.todayEpochDay(), languageCode)}", bodyPaint)
         y += 10f
         drawLine("Summary", headerPaint)
         drawLine("Income: ${summary.income}")

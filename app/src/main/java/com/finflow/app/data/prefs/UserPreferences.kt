@@ -1,5 +1,6 @@
 package com.finflow.app.data.prefs
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -8,6 +9,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.finflow.app.core.util.LocaleHelper
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +23,8 @@ import kotlinx.coroutines.flow.map
  */
 @Singleton
 class UserPreferences @Inject constructor(
-    private val store: DataStore<Preferences>
+    private val store: DataStore<Preferences>,
+    @ApplicationContext private val context: Context
 ) {
     private object Keys {
         val LAST_RECURRING_RUN = longPreferencesKey("recurring_last_run_epoch")
@@ -29,6 +33,9 @@ class UserPreferences @Inject constructor(
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val DISPLAY_CURRENCY = stringPreferencesKey("display_currency")
         val IRR_PER_USD = doublePreferencesKey("irr_per_usd")
+        val IRR_PER_EUR = doublePreferencesKey("irr_per_eur")
+        val IRR_PER_GBP = doublePreferencesKey("irr_per_gbp")
+        val APP_LANGUAGE = stringPreferencesKey("app_language")
         val BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
     }
@@ -70,6 +77,49 @@ class UserPreferences @Inject constructor(
     val irrPerUsd: Flow<Double> = store.data.map { it[Keys.IRR_PER_USD] ?: 42_000.0 }
     suspend fun setIrrPerUsd(rate: Double) {
         if (rate > 0) store.edit { it[Keys.IRR_PER_USD] = rate }
+    }
+
+    /** User-editable conversion rate (IRR per 1 EUR). */
+    val irrPerEur: Flow<Double> = store.data.map { it[Keys.IRR_PER_EUR] ?: 45_500.0 }
+    suspend fun setIrrPerEur(rate: Double) {
+        if (rate > 0) store.edit { it[Keys.IRR_PER_EUR] = rate }
+    }
+
+    /** User-editable conversion rate (IRR per 1 GBP). */
+    val irrPerGbp: Flow<Double> = store.data.map { it[Keys.IRR_PER_GBP] ?: 53_000.0 }
+    suspend fun setIrrPerGbp(rate: Double) {
+        if (rate > 0) store.edit { it[Keys.IRR_PER_GBP] = rate }
+    }
+
+    /** Combined IRR-per-unit rates for every non-IRR currency FinFlow offers. */
+    val ratesToIrr: Flow<Map<String, Double>> = store.data.map {
+        mapOf(
+            "USD" to (it[Keys.IRR_PER_USD] ?: 42_000.0),
+            "EUR" to (it[Keys.IRR_PER_EUR] ?: 45_500.0),
+            "GBP" to (it[Keys.IRR_PER_GBP] ?: 53_000.0)
+        )
+    }
+
+    /** Sets the IRR-per-unit rate for any supported non-IRR currency code. */
+    suspend fun setRateFor(code: String, rate: Double) {
+        when (code) {
+            "USD" -> setIrrPerUsd(rate)
+            "EUR" -> setIrrPerEur(rate)
+            "GBP" -> setIrrPerGbp(rate)
+        }
+    }
+
+    /**
+     * App UI language ("en"/"fa"); null until the user picks one, which the
+     * onboarding flow treats as "not chosen yet" and asks before entering
+     * the app. Also mirrored to a synchronous store via [LocaleHelper] so
+     * [com.finflow.app.MainActivity.attachBaseContext] can apply it on cold
+     * start, before Hilt/DataStore are usable.
+     */
+    val appLanguage: Flow<String?> = store.data.map { it[Keys.APP_LANGUAGE] }
+    suspend fun setAppLanguage(code: String) {
+        store.edit { it[Keys.APP_LANGUAGE] = code }
+        LocaleHelper.persist(context, code)
     }
 
     /** Whether the app asks for biometrics on launch. */

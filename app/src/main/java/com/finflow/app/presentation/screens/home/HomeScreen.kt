@@ -48,11 +48,11 @@ fun HomeScreen(
     val categories by viewModel.categoryList.collectAsState()
     val insights by viewModel.insights.collectAsState()
     val displayCurrency by viewModel.displayCurrency.collectAsState()
-    val irrPerUsd by viewModel.irrPerUsd.collectAsState()
+    val ratesToIrr by viewModel.ratesToIrr.collectAsState()
     val categoryById = categories.associateBy { it.id }
-    // Totals are stored in IRR; convert once for display (Phase 5 currency).
+    // Totals are stored in IRR; convert once for display (Phase 5/6 currency).
     fun shown(amount: Double): String = CurrencyUtils.format(
-        CurrencyUtils.convertWithRate(amount, "IRR", displayCurrency, irrPerUsd),
+        CurrencyUtils.convertWithRates(amount, "IRR", displayCurrency, ratesToIrr),
         displayCurrency
     )
 

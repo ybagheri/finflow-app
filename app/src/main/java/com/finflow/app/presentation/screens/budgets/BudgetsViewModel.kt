@@ -62,6 +62,12 @@ class BudgetsViewModel @Inject constructor(
     private val _month = MutableStateFlow(YearMonth.now())
     val month: StateFlow<YearMonth> = _month.asStateFlow()
 
+    /** Phase 6 display currency + rates for converting spent/limit totals. */
+    val displayCurrency: StateFlow<String> = prefs.displayCurrency
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "IRR")
+    val ratesToIrr: StateFlow<Map<String, Double>> = prefs.ratesToIrr
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.finflow.app.core.util.CurrencyUtils.DEFAULT_RATES_TO_IRR)
+
     private val monthKey: String get() = _month.value.toString()
 
     private val monthBudgets = _month.flatMapLatest { month ->
@@ -94,6 +100,8 @@ class BudgetsViewModel @Inject constructor(
         viewModelScope.launch {
             rows.collect { list ->
                 val notified = prefs.notifiedBudgets.first()
+                val currency = prefs.displayCurrency.first()
+                val rates = prefs.ratesToIrr.first()
                 list.filter { it.overspent && it.budget != null }.forEach { row ->
                     val key = "$monthKey:${row.budget!!.id}"
                     if (key !in notified && notificationsAllowed()) {
@@ -102,7 +110,9 @@ class BudgetsViewModel @Inject constructor(
                             row.budget.id.toInt(),
                             row.category.name,
                             row.spent,
-                            row.limit!!
+                            row.limit!!,
+                            currency,
+                            rates
                         )
                         prefs.markBudgetNotified(key)
                     }

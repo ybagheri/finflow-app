@@ -48,8 +48,15 @@ data class ReportUiState(
 @HiltViewModel
 class ReportsViewModel @Inject constructor(
     transactions: TransactionRepository,
-    categories: CategoryRepository
+    categories: CategoryRepository,
+    prefs: com.finflow.app.data.prefs.UserPreferences
 ) : ViewModel() {
+
+    /** Phase 6 display currency + rates for converting summary totals. */
+    val displayCurrency: StateFlow<String> = prefs.displayCurrency
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "IRR")
+    val ratesToIrr: StateFlow<Map<String, Double>> = prefs.ratesToIrr
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.finflow.app.core.util.CurrencyUtils.DEFAULT_RATES_TO_IRR)
 
     private val _period = MutableStateFlow(ReportPeriod.MONTH)
     val period: StateFlow<ReportPeriod> = _period.asStateFlow()
@@ -127,8 +134,9 @@ class ReportsViewModel @Inject constructor(
     }
 
     /** Title used for exports, e.g. "FinFlow report — September 2026". */
-    fun exportTitle(state: ReportUiState): String = when (state.period) {
-        ReportPeriod.MONTH -> "FinFlow report — ${DateUtils.formatEpochDay(state.month.atDay(1).toEpochDay(), "MMMM yyyy")}"
+    fun exportTitle(state: ReportUiState, languageCode: String = "en"): String = when (state.period) {
+        ReportPeriod.MONTH ->
+            "FinFlow report — ${DateUtils.formatMonthForDisplay(state.month.atDay(1).toEpochDay(), languageCode)}"
         ReportPeriod.YEAR -> "FinFlow report — ${state.year}"
     }
 }
