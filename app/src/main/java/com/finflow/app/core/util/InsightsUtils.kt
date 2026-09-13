@@ -43,7 +43,7 @@ object InsightsUtils {
         end: LocalDate = LocalDate.now()
     ): Double {
         if (days <= 0) return 0.0
-        val start = end.minusDays((days - 1).toLong())
+        val start = end.minusDays(days.toLong())
         val total = transactions
             .filter { it.type == TransactionType.EXPENSE }
             .filter {
