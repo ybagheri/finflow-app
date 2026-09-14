@@ -66,7 +66,6 @@ private fun intervalLabel(interval: RecurrenceInterval, fa: Boolean): String =
         RecurrenceInterval.DAILY -> "روزانه"
         RecurrenceInterval.WEEKLY -> "هفتگی"
         RecurrenceInterval.MONTHLY -> "ماهانه"
-        RecurrenceInterval.YEARLY -> "سالانه"
     } else interval.name.lowercase().replaceFirstChar { it.uppercase() }
 
 private fun typeLabel(type: TransactionType, fa: Boolean): String =

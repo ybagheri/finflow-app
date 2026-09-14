@@ -1,6 +1,6 @@
 # FinFlow — Modern Personal Finance Tracker
 
-> **Status: v1.0.0 released.** All 6 phases complete: foundation, transactions, reports, advanced features, polish and CI/CD. See [ROADMAP.md](ROADMAP.md).
+All 6 phases complete: foundation, transactions, reports, advanced features, polish and CI/CD. See [ROADMAP.md](ROADMAP.md).
 
 FinFlow is an offline-first Android personal finance tracker built with Kotlin, Jetpack Compose + Material 3, Room, Hilt and Navigation Compose.
 
