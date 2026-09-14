@@ -43,9 +43,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.CurrencyUtils
 import com.finflow.app.core.util.DateUtils
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
 import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.domain.model.Goal
 import com.finflow.app.presentation.components.EmptyState
+import com.finflow.app.presentation.components.JalaliDatePickerDialog
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -63,11 +65,12 @@ fun GoalsScreen(viewModel: GoalsViewModel = hiltViewModel()) {
     var creating by remember { mutableStateOf(false) }
     var depositing by remember { mutableStateOf<Goal?>(null) }
     var deleting by remember { mutableStateOf<Goal?>(null) }
+    val fa = language == LANGUAGE_PERSIAN
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { creating = true }) {
-                Icon(Icons.Filled.Add, contentDescription = "New goal")
+                Icon(Icons.Filled.Add, contentDescription = if (fa) "هدف جدید" else "New goal")
             }
         }
     ) { padding ->
@@ -75,11 +78,11 @@ fun GoalsScreen(viewModel: GoalsViewModel = hiltViewModel()) {
             Modifier.fillMaxSize().padding(padding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Goals", style = MaterialTheme.typography.headlineSmall)
+            Text(if (fa) "اهداف" else "Goals", style = MaterialTheme.typography.headlineSmall)
             if (goals.isEmpty()) {
                 EmptyState(
-                    title = "No goals yet",
-                    subtitle = "Create a savings goal and track deposits towards it.",
+                    title = if (fa) "هنوز هدفی نیست" else "No goals yet",
+                    subtitle = if (fa) "یک هدف پس‌انداز بساز و واریزی‌هایت را پیگیری کن." else "Create a savings goal and track deposits towards it.",
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -101,15 +104,15 @@ fun GoalsScreen(viewModel: GoalsViewModel = hiltViewModel()) {
                                     Text(goal.title, style = MaterialTheme.typography.titleSmall)
                                     Row {
                                         IconButton(onClick = { depositing = goal }) {
-                                            Icon(Icons.Filled.Savings, contentDescription = "Deposit")
+                                            Icon(Icons.Filled.Savings, contentDescription = if (fa) "واریز" else "Deposit")
                                         }
                                         IconButton(onClick = { editing = goal }) {
-                                            Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                                            Icon(Icons.Filled.Edit, contentDescription = if (fa) "ویرایش" else "Edit")
                                         }
                                         IconButton(onClick = { deleting = goal }) {
                                             Icon(
                                                 Icons.Filled.Delete,
-                                                contentDescription = "Delete",
+                                                contentDescription = if (fa) "حذف" else "Delete",
                                                 tint = MaterialTheme.colorScheme.error
                                             )
                                         }
@@ -135,7 +138,7 @@ fun GoalsScreen(viewModel: GoalsViewModel = hiltViewModel()) {
                                 }
                                 goal.deadlineEpochDay?.let { deadline ->
                                     Text(
-                                        "Due ${DateUtils.formatForDisplay(deadline, language)}",
+                                        "${if (fa) "سررسید" else "Due"} ${DateUtils.formatForDisplay(deadline, language)}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -163,12 +166,12 @@ fun GoalsScreen(viewModel: GoalsViewModel = hiltViewModel()) {
         var error by remember { mutableStateOf<String?>(null) }
         AlertDialog(
             onDismissRequest = { depositing = null },
-            title = { Text("Deposit to ${goal.title}") },
+            title = { Text(if (fa) "واریز به ${goal.title}" else "Deposit to ${goal.title}") },
             text = {
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it; error = null },
-                    label = { Text("Amount") },
+                    label = { Text(if (fa) "مبلغ" else "Amount") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = error != null,
                     supportingText = error?.let { { Text(it) } },
@@ -180,30 +183,35 @@ fun GoalsScreen(viewModel: GoalsViewModel = hiltViewModel()) {
                 TextButton(onClick = {
                     val parsed = amount.trim().toDoubleOrNull()
                     if (parsed == null || parsed <= 0) {
-                        error = "Enter an amount greater than 0"
+                        error = if (fa) "مبلغی بزرگ‌تر از صفر وارد کن" else "Enter an amount greater than 0"
                     } else {
                         viewModel.deposit(goal, parsed,
                             onDone = { depositing = null }, onError = { error = it })
                     }
-                }) { Text("Deposit") }
+                }) { Text(if (fa) "واریز" else "Deposit") }
             },
             dismissButton = {
-                TextButton(onClick = { depositing = null }) { Text("Cancel") }
+                TextButton(onClick = { depositing = null }) { Text(if (fa) "لغو" else "Cancel") }
             }
         )
     }
     deleting?.let { goal ->
         AlertDialog(
             onDismissRequest = { deleting = null },
-            title = { Text("Delete \"${goal.title}\"?") },
-            text = { Text("Saved progress of ${CurrencyUtils.format(goal.savedAmount, goal.currencyCode)} will be lost.") },
+            title = { Text(if (fa) "حذف «${goal.title}»؟" else "Delete \"${goal.title}\"?") },
+            text = {
+                Text(
+                    if (fa) "پیشرفت واریزی ${CurrencyUtils.format(goal.savedAmount, goal.currencyCode)} از بین می‌رود."
+                    else "Saved progress of ${CurrencyUtils.format(goal.savedAmount, goal.currencyCode)} will be lost."
+                )
+            },
             confirmButton = {
                 TextButton(onClick = { viewModel.delete(goal); deleting = null }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(if (fa) "حذف" else "Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleting = null }) { Text("Cancel") }
+                TextButton(onClick = { deleting = null }) { Text(if (fa) "لغو" else "Cancel") }
             }
         )
     }
@@ -223,23 +231,24 @@ private fun GoalDialog(
     var deadline by remember { mutableStateOf(existing?.deadlineEpochDay) }
     var showPicker by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    val fa = language == LANGUAGE_PERSIAN
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (existing == null) "New goal" else "Edit goal") },
+        title = { Text(if (existing == null) (if (fa) "هدف جدید" else "New goal") else (if (fa) "ویرایش هدف" else "Edit goal")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it; error = null },
-                    label = { Text("Title") },
+                    label = { Text(if (fa) "عنوان" else "Title") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = target,
                     onValueChange = { target = it; error = null },
-                    label = { Text("Target amount") },
+                    label = { Text(if (fa) "مبلغ هدف" else "Target amount") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -248,15 +257,15 @@ private fun GoalDialog(
                     onClick = { showPicker = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(deadline?.let { DateUtils.formatForDisplay(it, language) } ?: "Deadline (optional)")
+                    Text(deadline?.let { DateUtils.formatForDisplay(it, language) } ?: (if (fa) "سررسید (اختیاری)" else "Deadline (optional)"))
                 }
                 if (deadline != null) {
-                    TextButton(onClick = { deadline = null }) { Text("Clear deadline") }
+                    TextButton(onClick = { deadline = null }) { Text(if (fa) "پاک کردن سررسید" else "Clear deadline") }
                 }
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = { Text("Note (optional)") },
+                    label = { Text(if (fa) "یادداشت (اختیاری)" else "Note (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -266,33 +275,41 @@ private fun GoalDialog(
             TextButton(onClick = {
                 val parsed = target.trim().toDoubleOrNull()
                 onSave(title, parsed ?: -1.0, deadline, note) { error = it }
-            }) { Text("Save") }
+            }) { Text(if (fa) "ذخیره" else "Save") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(if (fa) "لغو" else "Cancel") }
         }
     )
     if (showPicker) {
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = (deadline?.let { LocalDate.ofEpochDay(it) } ?: LocalDate.now())
-                .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        )
-        DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { millis ->
-                        deadline = Instant.ofEpochMilli(millis)
-                            .atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay()
-                    }
-                    showPicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+        if (language == LANGUAGE_PERSIAN) {
+            JalaliDatePickerDialog(
+                initialEpochDay = deadline ?: DateUtils.todayEpochDay(),
+                onConfirm = { deadline = it; showPicker = false },
+                onDismiss = { showPicker = false }
+            )
+        } else {
+            val pickerState = rememberDatePickerState(
+                initialSelectedDateMillis = (deadline?.let { LocalDate.ofEpochDay(it) } ?: LocalDate.now())
+                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            )
+            DatePickerDialog(
+                onDismissRequest = { showPicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        pickerState.selectedDateMillis?.let { millis ->
+                            deadline = Instant.ofEpochMilli(millis)
+                                .atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay()
+                        }
+                        showPicker = false
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = pickerState)
             }
-        ) {
-            DatePicker(state = pickerState)
         }
     }
 }

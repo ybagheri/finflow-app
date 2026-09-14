@@ -96,7 +96,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(if (fa) "ظاهر" else "Appearance", style = MaterialTheme.typography.titleMedium)
-                viewModel.themeOptions.forEach { option ->
+                viewModel.themeOptions(appLanguage).forEach { option ->
                     Row(
                         modifier = Modifier.fillMaxWidth()
                             .selectable(

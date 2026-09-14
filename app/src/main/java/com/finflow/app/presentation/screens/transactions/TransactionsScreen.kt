@@ -36,13 +36,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.domain.model.TransactionSortField
 import com.finflow.app.domain.model.TransactionType
 import com.finflow.app.presentation.components.EmptyState
 import com.finflow.app.presentation.components.TransactionRow
 
-private fun sortLabel(field: TransactionSortField, ascending: Boolean): String =
-    when (field) {
+private fun sortLabel(field: TransactionSortField, ascending: Boolean, fa: Boolean): String =
+    if (fa) when (field) {
+        TransactionSortField.DATE -> if (ascending) "قدیمی‌ترین ابتدا" else "جدیدترین ابتدا"
+        TransactionSortField.AMOUNT -> if (ascending) "مبلغ ↑" else "مبلغ ↓"
+        TransactionSortField.CATEGORY -> if (ascending) "دسته الف-ی" else "دسته ی-الف"
+    } else when (field) {
         TransactionSortField.DATE -> if (ascending) "Oldest first" else "Newest first"
         TransactionSortField.AMOUNT -> if (ascending) "Amount ↑" else "Amount ↓"
         TransactionSortField.CATEGORY -> if (ascending) "Category A–Z" else "Category Z–A"
@@ -69,16 +75,17 @@ fun TransactionsScreen(
     var sortMenu by remember { mutableStateOf(false) }
     var categoryMenu by remember { mutableStateOf(false) }
     val hasActiveFilters = query.isNotBlank() || typeFilter != null || categoryFilter != null
+    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Transactions",
+                if (fa) "تراکنش‌ها" else "Transactions",
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.weight(1f)
             )
             IconButton(onClick = { sortMenu = true }) {
-                Icon(Icons.Filled.FilterList, contentDescription = "Sort")
+                Icon(Icons.Filled.FilterList, contentDescription = if (fa) "مرتب‌سازی" else "Sort")
             }
             DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
                 listOf(
@@ -91,7 +98,7 @@ fun TransactionsScreen(
                 ).forEach { (field, asc) ->
                     val selected = sort.field == field && sort.ascending == asc
                     DropdownMenuItem(
-                        text = { Text((if (selected) "✓ " else "") + sortLabel(field, asc)) },
+                        text = { Text((if (selected) "✓ " else "") + sortLabel(field, asc, fa)) },
                         onClick = {
                             viewModel.setSort(field, asc)
                             sortMenu = false
@@ -103,7 +110,7 @@ fun TransactionsScreen(
         OutlinedTextField(
             value = query,
             onValueChange = viewModel::setQuery,
-            label = { Text("Search notes, payment method") },
+            label = { Text(if (fa) "جستجو در یادداشت، روش پرداخت" else "Search notes, payment method") },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
@@ -113,7 +120,7 @@ fun TransactionsScreen(
                 FilterChip(
                     selected = typeFilter == null,
                     onClick = { viewModel.setTypeFilter(null) },
-                    label = { Text("All") }
+                    label = { Text(if (fa) "همه" else "All") }
                 )
             }
             item {
@@ -125,7 +132,7 @@ fun TransactionsScreen(
                             else TransactionType.INCOME
                         )
                     },
-                    label = { Text("Income") }
+                    label = { Text(if (fa) "درآمد" else "Income") }
                 )
             }
             item {
@@ -137,11 +144,11 @@ fun TransactionsScreen(
                             else TransactionType.EXPENSE
                         )
                     },
-                    label = { Text("Expense") }
+                    label = { Text(if (fa) "هزینه" else "Expense") }
                 )
             }
             item {
-                val activeName = categoryFilter?.let { categoryById[it]?.name } ?: "Category"
+                val activeName = categoryFilter?.let { categoryById[it]?.name } ?: (if (fa) "دسته" else "Category")
                 FilterChip(
                     selected = categoryFilter != null,
                     onClick = { categoryMenu = true },
@@ -153,14 +160,14 @@ fun TransactionsScreen(
                     FilterChip(
                         selected = false,
                         onClick = { viewModel.clearFilters() },
-                        label = { Text("Clear") }
+                        label = { Text(if (fa) "پاک کردن" else "Clear") }
                     )
                 }
             }
         }
         DropdownMenu(expanded = categoryMenu, onDismissRequest = { categoryMenu = false }) {
             DropdownMenuItem(
-                text = { Text("All categories") },
+                text = { Text(if (fa) "همه دسته‌ها" else "All categories") },
                 onClick = { viewModel.setCategoryFilter(null); categoryMenu = false }
             )
             categories.forEach { cat ->
@@ -171,15 +178,26 @@ fun TransactionsScreen(
             }
         }
         Text(
-            "${items.size} result${if (items.size == 1) "" else "s"} • ${sortLabel(sort.field, sort.ascending)}",
+            if (fa) {
+                "${items.size} ${if (items.size == 1) "نتیجه" else "نتیجه"} • ${sortLabel(sort.field, sort.ascending, fa)}"
+            } else {
+                "${items.size} result${if (items.size == 1) "" else "s"} • ${sortLabel(sort.field, sort.ascending, fa)}"
+            },
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (items.isEmpty()) {
             EmptyState(
-                title = if (hasActiveFilters) "No matches" else "No transactions yet",
-                subtitle = if (hasActiveFilters) "Try clearing search or filters."
-                else "Tap + to add your first income or expense.",
+                title = if (hasActiveFilters) {
+                    if (fa) "نتیجه‌ای پیدا نشد" else "No matches"
+                } else {
+                    if (fa) "هنوز تراکنشی نیست" else "No transactions yet"
+                },
+                subtitle = if (hasActiveFilters) {
+                    if (fa) "جستجو یا فیلترها را پاک کن." else "Try clearing search or filters."
+                } else {
+                    if (fa) "برای ثبت اولین درآمد یا هزینه، + را بزن." else "Tap + to add your first income or expense."
+                },
                 modifier = Modifier.fillMaxWidth().weight(1f)
             )
         } else {
@@ -205,7 +223,7 @@ fun TransactionsScreen(
                             ) {
                                 Icon(
                                     Icons.Filled.Delete,
-                                    contentDescription = "Delete",
+                                    contentDescription = if (fa) "حذف" else "Delete",
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             }

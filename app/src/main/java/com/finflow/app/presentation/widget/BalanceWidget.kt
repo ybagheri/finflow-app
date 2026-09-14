@@ -32,7 +32,8 @@ private data class WidgetSnapshot(
     val balance: Double,
     val todaySpent: Double,
     val currency: String,
-    val ratesToIrr: Map<String, Double>
+    val ratesToIrr: Map<String, Double>,
+    val language: String
 )
 
 /**
@@ -60,13 +61,17 @@ class BalanceWidget : GlanceAppWidget() {
             snapshot.currency
         )
         provideContent {
+            val fa = snapshot.language == "fa"
             Column(
                 modifier = GlanceModifier.fillMaxSize().padding(16.dp)
             ) {
                 Text("FinFlow")
-                Text("Balance: $balance")
-                Text("Today: $today")
-                Button(text = "Open FinFlow", onClick = actionStartActivity<MainActivity>())
+                Text("${if (fa) "موجودی" else "Balance"}: $balance")
+                Text("${if (fa) "امروز" else "Today"}: $today")
+                Button(
+                    text = if (fa) "باز کردن FinFlow" else "Open FinFlow",
+                    onClick = actionStartActivity<MainActivity>()
+                )
             }
         }
     }
@@ -80,6 +85,7 @@ class BalanceWidget : GlanceAppWidget() {
         )
         val currency = entry.prefs().displayCurrency.first()
         val rates = entry.prefs().ratesToIrr.first()
+        val language = entry.prefs().appLanguage.first() ?: "en"
         val db = Room.databaseBuilder(appContext, FinFlowDatabase::class.java, FinFlowDatabase.NAME)
             .build()
         try {
@@ -90,12 +96,12 @@ class BalanceWidget : GlanceAppWidget() {
             val todaySpent = dao.observeByDateDesc().first()
                 .filter { it.type == TransactionType.EXPENSE.name && it.dateEpochDay == today }
                 .sumOf { it.amount }
-            WidgetSnapshot(income - expense, todaySpent, currency, rates)
+            WidgetSnapshot(income - expense, todaySpent, currency, rates, language)
         } finally {
             runCatching { db.close() }
         }
     }.getOrElse {
-        WidgetSnapshot(0.0, 0.0, "IRR", CurrencyUtils.DEFAULT_RATES_TO_IRR)
+        WidgetSnapshot(0.0, 0.0, "IRR", CurrencyUtils.DEFAULT_RATES_TO_IRR, "en")
     }
 }
 

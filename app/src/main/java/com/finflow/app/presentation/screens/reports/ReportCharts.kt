@@ -18,7 +18,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.finflow.app.core.util.CategoryTotal
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.core.util.MonthPoint
+import com.finflow.app.core.util.PersianCalendar
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.max
@@ -38,9 +41,10 @@ fun CategoryDonutChart(
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme
+    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
     if (totals.isEmpty()) {
         Text(
-            "No data for this selection yet.",
+            if (fa) "هنوز داده‌ای برای این انتخاب نیست." else "No data for this selection yet.",
             style = MaterialTheme.typography.bodyMedium,
             color = scheme.onSurfaceVariant,
             modifier = modifier
@@ -104,6 +108,7 @@ fun MonthlyTrendBars(
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme
+    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
     val incomeColor = Color(0xFF2E7D32)
     val expenseColor = scheme.error
     val trackColor = scheme.surfaceVariant
@@ -128,8 +133,16 @@ fun MonthlyTrendBars(
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             points.forEach { point ->
+                val label = if (fa) {
+                    val (_, jm, _) = PersianCalendar.toJalali(
+                        point.month.year, point.month.monthValue, 1
+                    )
+                    PersianCalendar.monthNamesFa[jm - 1].take(3)
+                } else {
+                    point.month.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                }
                 Text(
-                    point.month.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                    label,
                     style = MaterialTheme.typography.labelSmall,
                     color = scheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
@@ -138,8 +151,8 @@ fun MonthlyTrendBars(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            LegendDot(incomeColor, "Income")
-            LegendDot(expenseColor, "Expense")
+            LegendDot(incomeColor, if (fa) "درآمد" else "Income")
+            LegendDot(expenseColor, if (fa) "هزینه" else "Expense")
         }
     }
 }

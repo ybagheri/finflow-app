@@ -49,15 +49,32 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.CurrencyUtils
 import com.finflow.app.core.util.DateUtils
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
 import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.data.work.RecurringScheduler
 import com.finflow.app.domain.model.RecurrenceInterval
 import com.finflow.app.domain.model.RecurringRule
 import com.finflow.app.domain.model.TransactionType
 import com.finflow.app.presentation.components.EmptyState
+import com.finflow.app.presentation.components.JalaliDatePickerDialog
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+
+private fun intervalLabel(interval: RecurrenceInterval, fa: Boolean): String =
+    if (fa) when (interval) {
+        RecurrenceInterval.DAILY -> "روزانه"
+        RecurrenceInterval.WEEKLY -> "هفتگی"
+        RecurrenceInterval.MONTHLY -> "ماهانه"
+        RecurrenceInterval.YEARLY -> "سالانه"
+    } else interval.name.lowercase().replaceFirstChar { it.uppercase() }
+
+private fun typeLabel(type: TransactionType, fa: Boolean): String =
+    if (fa) {
+        if (type == TransactionType.INCOME) "درآمد" else "هزینه"
+    } else {
+        type.name.lowercase().replaceFirstChar { it.uppercase() }
+    }
 
 /**
  * Phase 4 recurring rules: list with next-due dates, active toggles,
@@ -76,12 +93,13 @@ fun RecurringScreen(viewModel: RecurringViewModel = hiltViewModel()) {
     var deleting by remember { mutableStateOf<RecurringRule?>(null) }
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
+    val fa = language == LANGUAGE_PERSIAN
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             FloatingActionButton(onClick = { creating = true }) {
-                Icon(Icons.Filled.Add, contentDescription = "New rule")
+                Icon(Icons.Filled.Add, contentDescription = if (fa) "قانون جدید" else "New rule")
             }
         }
     ) { padding ->
@@ -94,21 +112,21 @@ fun RecurringScreen(viewModel: RecurringViewModel = hiltViewModel()) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Recurring", style = MaterialTheme.typography.headlineSmall)
+                Text(if (fa) "تکرارشونده" else "Recurring", style = MaterialTheme.typography.headlineSmall)
                 OutlinedButton(onClick = { RecurringScheduler.runOnce(context) }) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null)
-                    Text("Run now")
+                    Text(if (fa) "اجرا کن" else "Run now")
                 }
             }
             Text(
-                "Rules spawn transactions daily in the background.",
+                if (fa) "قوانین به‌صورت خودکار و روزانه تراکنش می‌سازند." else "Rules spawn transactions daily in the background.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (rules.isEmpty()) {
                 EmptyState(
-                    title = "No recurring rules",
-                    subtitle = "Automate rent, salary or subscriptions.",
+                    title = if (fa) "قانون تکرارشونده‌ای نیست" else "No recurring rules",
+                    subtitle = if (fa) "اجاره، حقوق یا اشتراک‌ها را خودکار کن." else "Automate rent, salary or subscriptions.",
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -118,10 +136,10 @@ fun RecurringScreen(viewModel: RecurringViewModel = hiltViewModel()) {
                 ) {
                     items(rules, key = { it.id }) { rule ->
                         val catName = categoryById[rule.categoryId]?.name ?: rule.type.name
-                        val nextDue = remember(rule) {
+                        val nextDue = remember(rule, language) {
                             RecurringScheduler.nextDueAfter(rule)?.let {
                                 DateUtils.formatForDisplay(it.toEpochDay(), language)
-                            } ?: "ended"
+                            } ?: (if (fa) "پایان یافته" else "ended")
                         }
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Column(
@@ -144,7 +162,7 @@ fun RecurringScreen(viewModel: RecurringViewModel = hiltViewModel()) {
                                 }
                                 Text(
                                     "${CurrencyUtils.format(rule.amount, rule.currencyCode)} • " +
-                                        rule.interval.name.lowercase().replaceFirstChar { it.uppercase() } +
+                                        intervalLabel(rule.interval, fa) +
                                         " • $catName",
                                     style = MaterialTheme.typography.bodyMedium
                                 )
@@ -154,18 +172,18 @@ fun RecurringScreen(viewModel: RecurringViewModel = hiltViewModel()) {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        "Next: $nextDue",
+                                        "${if (fa) "بعدی" else "Next"}: $nextDue",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Row {
                                         IconButton(onClick = { editing = rule }) {
-                                            Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                                            Icon(Icons.Filled.Edit, contentDescription = if (fa) "ویرایش" else "Edit")
                                         }
                                         IconButton(onClick = { deleting = rule }) {
                                             Icon(
                                                 Icons.Filled.Delete,
-                                                contentDescription = "Delete",
+                                                contentDescription = if (fa) "حذف" else "Delete",
                                                 tint = MaterialTheme.colorScheme.error
                                             )
                                         }
@@ -193,15 +211,19 @@ fun RecurringScreen(viewModel: RecurringViewModel = hiltViewModel()) {
     deleting?.let { rule ->
         AlertDialog(
             onDismissRequest = { deleting = null },
-            title = { Text("Delete this rule?") },
-            text = { Text("Already-created transactions stay; no new ones will spawn.") },
+            title = { Text(if (fa) "این قانون حذف شود؟" else "Delete this rule?") },
+            text = {
+                Text(
+                    if (fa) "تراکنش‌های قبلاً ساخته‌شده باقی می‌مانند؛ تراکنش جدیدی ساخته نمی‌شود." else "Already-created transactions stay; no new ones will spawn."
+                )
+            },
             confirmButton = {
                 TextButton(onClick = { viewModel.delete(rule); deleting = null }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(if (fa) "حذف" else "Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleting = null }) { Text("Cancel") }
+                TextButton(onClick = { deleting = null }) { Text(if (fa) "لغو" else "Cancel") }
             }
         )
     }
@@ -230,18 +252,19 @@ private fun RuleDialog(
     var error by remember { mutableStateOf<String?>(null) }
     var categoryMenu by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<String?>(null) } // "start" | "end" | null
+    val fa = language == LANGUAGE_PERSIAN
 
     val typeCategories = remember(categories, type) { categories.filter { it.type == type } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (existing == null) "New rule" else "Edit rule") },
+        title = { Text(if (existing == null) (if (fa) "قانون جدید" else "New rule") else (if (fa) "ویرایش قانون" else "Edit rule")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it; error = null },
-                    label = { Text("Amount") },
+                    label = { Text(if (fa) "مبلغ" else "Amount") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -251,7 +274,7 @@ private fun RuleDialog(
                         FilterChip(
                             selected = type == t,
                             onClick = { type = t; categoryId = 0L },
-                            label = { Text(t.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                            label = { Text(typeLabel(t, fa)) }
                         )
                     }
                 }
@@ -259,7 +282,7 @@ private fun RuleDialog(
                     onClick = { categoryMenu = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(typeCategories.firstOrNull { it.id == categoryId }?.name ?: "Select category")
+                    Text(typeCategories.firstOrNull { it.id == categoryId }?.name ?: (if (fa) "انتخاب دسته" else "Select category"))
                 }
                 DropdownMenu(expanded = categoryMenu, onDismissRequest = { categoryMenu = false }) {
                     typeCategories.forEach { cat ->
@@ -274,9 +297,7 @@ private fun RuleDialog(
                         FilterChip(
                             selected = interval == iv,
                             onClick = { interval = iv },
-                            label = {
-                                Text(iv.name.lowercase().replaceFirstChar { it.uppercase() })
-                            }
+                            label = { Text(intervalLabel(iv, fa)) }
                         )
                     }
                 }
@@ -287,21 +308,21 @@ private fun RuleDialog(
                     OutlinedButton(
                         onClick = { picking = "start" },
                         modifier = Modifier.weight(1f)
-                    ) { Text("From ${DateUtils.formatForDisplay(start, language)}") }
+                    ) { Text("${if (fa) "از" else "From"} ${DateUtils.formatForDisplay(start, language)}") }
                     OutlinedButton(
                         onClick = { picking = "end" },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(end?.let { DateUtils.formatForDisplay(it, language) } ?: "No end")
+                        Text(end?.let { DateUtils.formatForDisplay(it, language) } ?: (if (fa) "بدون پایان" else "No end"))
                     }
                 }
                 if (end != null) {
-                    TextButton(onClick = { end = null }) { Text("Clear end date") }
+                    TextButton(onClick = { end = null }) { Text(if (fa) "پاک کردن تاریخ پایان" else "Clear end date") }
                 }
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = { Text("Note (optional)") },
+                    label = { Text(if (fa) "یادداشت (اختیاری)" else "Note (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -311,42 +332,54 @@ private fun RuleDialog(
             TextButton(onClick = {
                 val parsed = amount.trim().toDoubleOrNull()
                 if (parsed == null || parsed <= 0) {
-                    error = "Enter an amount greater than 0"
+                    error = if (fa) "مبلغی بزرگ‌تر از صفر وارد کن" else "Enter an amount greater than 0"
                 } else {
                     onSave(parsed, type, categoryId, interval, start, end, note, null) {
                         error = it
                     }
                 }
-            }) { Text("Save") }
+            }) { Text(if (fa) "ذخیره" else "Save") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(if (fa) "لغو" else "Cancel") }
         }
     )
     if (picking != null) {
-        val initial = (if (picking == "start") start else (end ?: DateUtils.todayEpochDay()))
-            .let { LocalDate.ofEpochDay(it) }
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = initial.atStartOfDay(ZoneId.systemDefault())
-                .toInstant().toEpochMilli()
-        )
-        DatePickerDialog(
-            onDismissRequest = { picking = null },
-            confirmButton = {
-                TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { millis ->
-                        val day = Instant.ofEpochMilli(millis)
-                            .atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay()
-                        if (picking == "start") start = day else end = day
-                    }
+        val pickingKey = picking
+        if (fa) {
+            JalaliDatePickerDialog(
+                initialEpochDay = if (pickingKey == "start") start else (end ?: DateUtils.todayEpochDay()),
+                onConfirm = { day ->
+                    if (pickingKey == "start") start = day else end = day
                     picking = null
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { picking = null }) { Text("Cancel") }
+                },
+                onDismiss = { picking = null }
+            )
+        } else {
+            val initial = (if (pickingKey == "start") start else (end ?: DateUtils.todayEpochDay()))
+                .let { LocalDate.ofEpochDay(it) }
+            val pickerState = rememberDatePickerState(
+                initialSelectedDateMillis = initial.atStartOfDay(ZoneId.systemDefault())
+                    .toInstant().toEpochMilli()
+            )
+            DatePickerDialog(
+                onDismissRequest = { picking = null },
+                confirmButton = {
+                    TextButton(onClick = {
+                        pickerState.selectedDateMillis?.let { millis ->
+                            val day = Instant.ofEpochMilli(millis)
+                                .atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay()
+                            if (pickingKey == "start") start = day else end = day
+                        }
+                        picking = null
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { picking = null }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = pickerState)
             }
-        ) {
-            DatePicker(state = pickerState)
         }
     }
 }

@@ -27,6 +27,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.presentation.screens.addedit.AddEditScreen
 import com.finflow.app.presentation.screens.budgets.BudgetsScreen
 import com.finflow.app.presentation.screens.categories.CategoriesScreen
@@ -39,14 +41,14 @@ import com.finflow.app.presentation.screens.reports.ReportsScreen
 import com.finflow.app.presentation.screens.settings.SettingsScreen
 import com.finflow.app.presentation.screens.transactions.TransactionsScreen
 
-private data class Tab(val route: String, val label: String, val icon: ImageVector)
+private data class Tab(val route: String, val labelEn: String, val labelFa: String, val icon: ImageVector)
 
 private val TABS = listOf(
-    Tab(Routes.HOME, "Home", Icons.Filled.Home),
-    Tab(Routes.TRANSACTIONS, "Activity", Icons.Filled.Receipt),
-    Tab(Routes.CATEGORIES, "Categories", Icons.Filled.Category),
-    Tab(Routes.REPORTS, "Reports", Icons.Filled.PieChart),
-    Tab(Routes.MORE, "More", Icons.Filled.MoreHoriz)
+    Tab(Routes.HOME, "Home", "خانه", Icons.Filled.Home),
+    Tab(Routes.TRANSACTIONS, "Activity", "تراکنش‌ها", Icons.Filled.Receipt),
+    Tab(Routes.CATEGORIES, "Categories", "دسته‌ها", Icons.Filled.Category),
+    Tab(Routes.REPORTS, "Reports", "گزارش‌ها", Icons.Filled.PieChart),
+    Tab(Routes.MORE, "More", "بیشتر", Icons.Filled.MoreHoriz)
 )
 
 /**
@@ -62,11 +64,13 @@ fun FinFlowNavGraph(startDestination: String = Routes.HOME) {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     val haptics = LocalHapticFeedback.current
+    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
 
     Scaffold(
         bottomBar = {
             NavigationBar {
                 TABS.forEach { tab ->
+                    val label = if (fa) tab.labelFa else tab.labelEn
                     NavigationBarItem(
                         selected = currentRoute == tab.route,
                         onClick = {
@@ -76,8 +80,8 @@ fun FinFlowNavGraph(startDestination: String = Routes.HOME) {
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        label = { Text(tab.label) }
+                        icon = { Icon(tab.icon, contentDescription = label) },
+                        label = { Text(label) }
                     )
                 }
             }
@@ -89,7 +93,7 @@ fun FinFlowNavGraph(startDestination: String = Routes.HOME) {
                     navController.navigate(Routes.addEdit())
                 }
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Add transaction")
+                Icon(Icons.Filled.Add, contentDescription = if (fa) "افزودن تراکنش" else "Add transaction")
             }
         }
     ) { padding ->

@@ -42,6 +42,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.CurrencyUtils
+import com.finflow.app.core.util.DateUtils
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
+import com.finflow.app.core.util.LocalAppLanguage
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -57,6 +60,8 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
     val ratesToIrr by viewModel.ratesToIrr.collectAsState()
     var editing by remember { mutableStateOf<BudgetRow?>(null) }
     val context = LocalContext.current
+    val language = LocalAppLanguage.current
+    val fa = language == LANGUAGE_PERSIAN
 
     // Totals are stored in IRR; convert once for display (Phase 5/6 currency).
     fun shown(amount: Double): String = CurrencyUtils.format(
@@ -83,7 +88,7 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
     val overspent = rows.count { it.overspent }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Budgets", style = MaterialTheme.typography.headlineSmall)
+        Text(if (fa) "بودجه‌ها" else "Budgets", style = MaterialTheme.typography.headlineSmall)
         Card(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
@@ -91,23 +96,31 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { viewModel.shiftMonth(-1) }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous month")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = if (fa) "ماه قبل" else "Previous month")
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "${month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${month.year}",
+                        if (fa) {
+                            DateUtils.formatMonthForDisplay(month.atDay(1).toEpochDay(), language)
+                        } else {
+                            "${month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${month.year}"
+                        },
                         style = MaterialTheme.typography.titleMedium
                     )
-                    TextButton(onClick = { viewModel.goToCurrentMonth() }) { Text("This month") }
+                    TextButton(onClick = { viewModel.goToCurrentMonth() }) { Text(if (fa) "این ماه" else "This month") }
                 }
                 IconButton(onClick = { viewModel.shiftMonth(1) }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next month")
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = if (fa) "ماه بعد" else "Next month")
                 }
             }
         }
         Text(
-            "$capped cap${if (capped == 1) "" else "s"} set" +
-                if (overspent > 0) " • $overspent over budget" else "",
+            if (fa) {
+                "$capped سقف تعیین‌شده" + if (overspent > 0) " • $overspent بیش از بودجه" else ""
+            } else {
+                "$capped cap${if (capped == 1) "" else "s"} set" +
+                    if (overspent > 0) " • $overspent over budget" else ""
+            },
             style = MaterialTheme.typography.labelMedium,
             color = if (overspent > 0) MaterialTheme.colorScheme.error
             else MaterialTheme.colorScheme.onSurfaceVariant
@@ -136,13 +149,13 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (row.budget == null) {
                                     IconButton(onClick = { editing = row }) {
-                                        Icon(Icons.Filled.Add, contentDescription = "Set cap")
+                                        Icon(Icons.Filled.Add, contentDescription = if (fa) "تعیین سقف" else "Set cap")
                                     }
                                 } else {
                                     IconButton(onClick = { viewModel.removeCap(row) }) {
                                         Icon(
                                             Icons.Filled.Delete,
-                                            contentDescription = "Remove cap",
+                                            contentDescription = if (fa) "حذف سقف" else "Remove cap",
                                             tint = MaterialTheme.colorScheme.error
                                         )
                                     }
@@ -165,17 +178,20 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 Text(
-                                    if (row.overspent) "Over budget" else
-                                        "${((row.progress ?: 0f) * 100).toInt()}%",
+                                    if (row.overspent) {
+                                        if (fa) "بیش از بودجه" else "Over budget"
+                                    } else {
+                                        "${((row.progress ?: 0f) * 100).toInt()}%"
+                                    },
                                     style = MaterialTheme.typography.labelMedium,
                                     color = if (row.overspent) MaterialTheme.colorScheme.error
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            TextButton(onClick = { editing = row }) { Text("Edit cap") }
+                            TextButton(onClick = { editing = row }) { Text(if (fa) "ویرایش سقف" else "Edit cap") }
                         } else {
                             Text(
-                                "Spent ${shown(row.spent)} • no cap set",
+                                "${if (fa) "خرج‌شده" else "Spent"} ${shown(row.spent)} • ${if (fa) "بدون سقف" else "no cap set"}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -193,13 +209,13 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
         var error by remember { mutableStateOf<String?>(null) }
         AlertDialog(
             onDismissRequest = { editing = null },
-            title = { Text("Cap for ${row.category.name}") },
+            title = { Text(if (fa) "سقف برای ${row.category.name}" else "Cap for ${row.category.name}") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = amount,
                         onValueChange = { amount = it; error = null },
-                        label = { Text("Monthly cap") },
+                        label = { Text(if (fa) "سقف ماهانه" else "Monthly cap") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         isError = error != null,
                         supportingText = error?.let { { Text(it) } },
@@ -207,7 +223,7 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        "Spent so far: ${shown(row.spent)}",
+                        "${if (fa) "تاکنون خرج شده" else "Spent so far"}: ${shown(row.spent)}",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -216,14 +232,14 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
                 TextButton(onClick = {
                     val parsed = amount.trim().toDoubleOrNull()
                     if (parsed == null || parsed <= 0) {
-                        error = "Enter an amount greater than 0"
+                        error = if (fa) "مبلغی بزرگ‌تر از صفر وارد کن" else "Enter an amount greater than 0"
                     } else {
                         viewModel.setCap(row.category, parsed) { editing = null }
                     }
-                }) { Text("Save") }
+                }) { Text(if (fa) "ذخیره" else "Save") }
             },
             dismissButton = {
-                TextButton(onClick = { editing = null }) { Text("Cancel") }
+                TextButton(onClick = { editing = null }) { Text(if (fa) "لغو" else "Cancel") }
             }
         )
     }

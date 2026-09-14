@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.CurrencyUtils
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.presentation.components.EmptyState
 import com.finflow.app.presentation.components.TransactionRow
 
@@ -50,6 +52,7 @@ fun HomeScreen(
     val displayCurrency by viewModel.displayCurrency.collectAsState()
     val ratesToIrr by viewModel.ratesToIrr.collectAsState()
     val categoryById = categories.associateBy { it.id }
+    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
     // Totals are stored in IRR; convert once for display (Phase 5/6 currency).
     fun shown(amount: Double): String = CurrencyUtils.format(
         CurrencyUtils.convertWithRates(amount, "IRR", displayCurrency, ratesToIrr),
@@ -65,38 +68,45 @@ fun HomeScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         ) {
             Column(Modifier.padding(20.dp)) {
-                Text("Total balance", style = MaterialTheme.typography.labelLarge)
+                Text(if (fa) "موجودی کل" else "Total balance", style = MaterialTheme.typography.labelLarge)
                 Text(
                     shown(balance),
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Income: ${shown(income)}")
-                    Text("Expense: ${shown(expense)}")
+                    Text("${if (fa) "درآمد" else "Income"}: ${shown(income)}")
+                    Text("${if (fa) "هزینه" else "Expense"}: ${shown(expense)}")
                 }
             }
         }
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Insights", style = MaterialTheme.typography.titleMedium)
+                Text(if (fa) "تحلیل‌ها" else "Insights", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Daily average: ${shown(insights.dailyAverage)} (30d)",
+                    "${if (fa) "میانگین روزانه" else "Daily average"}: ${shown(insights.dailyAverage)} (30d)",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    if (insights.streakDays > 0) "Logging streak: ${insights.streakDays}d in a row"
-                    else "Log a transaction to start a streak",
+                    if (insights.streakDays > 0) {
+                        if (fa) "${insights.streakDays} روز پیاپی ثبت شده" else "Logging streak: ${insights.streakDays}d in a row"
+                    } else {
+                        if (fa) "برای شروع یک تراکنش ثبت کن" else "Log a transaction to start a streak"
+                    },
                     style = MaterialTheme.typography.bodyMedium
                 )
                 val delta = insights.topDelta
                 if (delta != null) {
-                    val name = insights.topDeltaCategoryName ?: "Top category"
+                    val name = insights.topDeltaCategoryName ?: (if (fa) "دسته برتر" else "Top category")
                     val change = delta.percentChange
                     Text(
-                        if (change == null) "New this month: $name"
-                        else if (change >= 0) "${change.toInt()}% more on $name vs last month"
-                        else "${(-change).toInt()}% less on $name vs last month",
+                        if (change == null) {
+                            if (fa) "جدید در این ماه: $name" else "New this month: $name"
+                        } else if (change >= 0) {
+                            if (fa) "${change.toInt()}٪ بیشتر در $name نسبت به ماه قبل" else "${change.toInt()}% more on $name vs last month"
+                        } else {
+                            if (fa) "${(-change).toInt()}٪ کمتر در $name نسبت به ماه قبل" else "${(-change).toInt()}% less on $name vs last month"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -108,15 +118,15 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Recent activity", style = MaterialTheme.typography.titleMedium)
+            Text(if (fa) "فعالیت اخیر" else "Recent activity", style = MaterialTheme.typography.titleMedium)
             if (recent.isNotEmpty() && onSeeAllClick != null) {
-                TextButton(onClick = onSeeAllClick) { Text("See all") }
+                TextButton(onClick = onSeeAllClick) { Text(if (fa) "مشاهده همه" else "See all") }
             }
         }
         if (recent.isEmpty()) {
             EmptyState(
-                title = "No transactions yet",
-                subtitle = "Tap + to add your first income or expense.",
+                title = if (fa) "هنوز تراکنشی نیست" else "No transactions yet",
+                subtitle = if (fa) "برای ثبت اولین درآمد یا هزینه، + را بزن." else "Tap + to add your first income or expense.",
                 modifier = Modifier.fillMaxWidth().weight(1f)
             )
         } else {
@@ -139,7 +149,7 @@ fun HomeScreen(
         }
         if (recent.isEmpty()) {
             Button(onClick = onAddClick, modifier = Modifier.fillMaxWidth()) {
-                Text("Add transaction")
+                Text(if (fa) "افزودن تراکنش" else "Add transaction")
             }
         }
     }

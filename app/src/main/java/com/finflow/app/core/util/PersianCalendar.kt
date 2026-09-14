@@ -89,6 +89,29 @@ internal object PersianCalendar {
         return Triple(jy, jm + 1, j + 1)
     }
 
+    private fun d2g(jdnIn: Int): Triple<Int, Int, Int> {
+        val jdn = jdnIn
+        val aa = Math.floor((jdn - 1867216.25) / 36524.25).toInt()
+        val a = jdn + 1 + aa - div(aa, 4)
+        val b = a + 1524
+        val c = Math.floor((b - 122.1) / 365.25).toInt()
+        val d = Math.floor(365.25 * c).toInt()
+        val e = Math.floor((b - d) / 30.6001).toInt()
+        val day = b - d - Math.floor(30.6001 * e).toInt()
+        val month = if (e < 14) e - 1 else e - 13
+        val year = if (month > 2) c - 4716 else c - 4715
+        return Triple(year, month, day)
+    }
+
+    /** Jalali date -> Gregorian (year, month 1-12, day). */
+    fun toGregorian(jy: Int, jm: Int, jd: Int): Triple<Int, Int, Int> = d2g(j2d(jy, jm, jd))
+
+    /** Number of days in a given Jalali year+month (30/31, or 29/30 for month 12). */
+    fun daysInMonth(jy: Int, jm: Int): Int {
+        val startOfNext = if (jm == 12) j2d(jy + 1, 1, 1) else j2d(jy, jm + 1, 1)
+        return startOfNext - j2d(jy, jm, 1)
+    }
+
     val monthNamesFa = listOf(
         "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
         "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"

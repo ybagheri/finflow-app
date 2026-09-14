@@ -37,6 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.CurrencyUtils
+import com.finflow.app.core.util.DateUtils
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
 import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.core.util.ReportUtils
 import com.finflow.app.domain.model.TransactionType
@@ -60,6 +62,7 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
     val ratesToIrr by viewModel.ratesToIrr.collectAsState()
     val context = LocalContext.current
     val language = LocalAppLanguage.current
+    val fa = language == LANGUAGE_PERSIAN
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val categoryById = state.categories.associateBy { it.id }
@@ -68,7 +71,7 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
         categoryById[id]?.let { Color(it.colorArgb) } ?: fallbackCategoryColor
     }
     val nameOf: (Long) -> String = { id ->
-        categoryById[id]?.name ?: "Unknown"
+        categoryById[id]?.name ?: (if (fa) "ناشناخته" else "Unknown")
     }
     // Totals are stored in IRR; convert once for display (Phase 5/6 currency).
     fun shown(amount: Double): String = CurrencyUtils.format(
@@ -91,9 +94,12 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
                         )
                     } ?: error("Could not open file")
                 }.onFailure {
-                    snackbar.showSnackbar("CSV export failed: ${it.message}")
+                    snackbar.showSnackbar((if (fa) "خروجی CSV ناموفق بود: " else "CSV export failed: ") + it.message)
                 }.onSuccess {
-                    snackbar.showSnackbar("CSV exported (${state.periodTransactions.size} rows)")
+                    snackbar.showSnackbar(
+                        if (fa) "CSV خروجی گرفته شد (${state.periodTransactions.size} ردیف)"
+                        else "CSV exported (${state.periodTransactions.size} rows)"
+                    )
                 }
             }
         }
@@ -114,9 +120,9 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
                         languageCode = language
                     )
                 }.onFailure {
-                    snackbar.showSnackbar("PDF export failed: ${it.message}")
+                    snackbar.showSnackbar((if (fa) "خروجی PDF ناموفق بود: " else "PDF export failed: ") + it.message)
                 }.onSuccess {
-                    snackbar.showSnackbar("PDF exported")
+                    snackbar.showSnackbar(if (fa) "PDF خروجی گرفته شد" else "PDF exported")
                 }
             }
         }
@@ -126,19 +132,19 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
         modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Reports", style = MaterialTheme.typography.headlineSmall)
+        Text(if (fa) "گزارش‌ها" else "Reports", style = MaterialTheme.typography.headlineSmall)
 
         // Period scope toggle
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = period == ReportPeriod.MONTH,
                 onClick = { viewModel.setPeriod(ReportPeriod.MONTH) },
-                label = { Text("Monthly") }
+                label = { Text(if (fa) "ماهانه" else "Monthly") }
             )
             FilterChip(
                 selected = period == ReportPeriod.YEAR,
                 onClick = { viewModel.setPeriod(ReportPeriod.YEAR) },
-                label = { Text("Yearly") }
+                label = { Text(if (fa) "سالانه" else "Yearly") }
             )
         }
 
@@ -155,17 +161,22 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
                         else viewModel.shiftYear(-1)
                     }
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = if (fa) "قبلی" else "Previous")
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         when (period) {
-                            ReportPeriod.MONTH -> "${month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${month.year}"
+                            ReportPeriod.MONTH -> if (fa) {
+                                DateUtils.formatMonthForDisplay(month.atDay(1).toEpochDay(), language)
+                            } else {
+                                "${month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${month.year}"
+                            }
                             ReportPeriod.YEAR -> year.toString()
                         },
                         style = MaterialTheme.typography.titleMedium
                     )
-                    TextButton(onClick = { viewModel.goToToday() }) {                        Text("Today")
+                    TextButton(onClick = { viewModel.goToToday() }) {
+                        Text(if (fa) "امروز" else "Today")
                     }
                 }
                 IconButton(
@@ -174,7 +185,7 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
                         else viewModel.shiftYear(1)
                     }
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = if (fa) "بعدی" else "Next")
                 }
             }
         }
@@ -188,16 +199,19 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
                 Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text("Net balance", style = MaterialTheme.typography.labelLarge)
+                Text(if (fa) "موجودی خالص" else "Net balance", style = MaterialTheme.typography.labelLarge)
                 Text(
                     shown(state.summary.net),
                     style = MaterialTheme.typography.headlineMedium
                 )
-                Text("Income: ${shown(state.summary.income)}")
-                Text("Expense: ${shown(state.summary.expense)}")
+                Text("${if (fa) "درآمد" else "Income"}: ${shown(state.summary.income)}")
+                Text("${if (fa) "هزینه" else "Expense"}: ${shown(state.summary.expense)}")
                 Text(
-                    "${state.summary.count} transaction${if (state.summary.count == 1) "" else "s"}" +
-                        momSuffix(state.summary.net, state.previousSummary.net),
+                    (if (fa) {
+                        "${state.summary.count} تراکنش"
+                    } else {
+                        "${state.summary.count} transaction${if (state.summary.count == 1) "" else "s"}"
+                    }) + momSuffix(state.summary.net, state.previousSummary.net, fa),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -207,17 +221,17 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
         // Donut breakdown
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Spending breakdown", style = MaterialTheme.typography.titleMedium)
+                Text(if (fa) "تفکیک هزینه‌ها" else "Spending breakdown", style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = pieType == TransactionType.EXPENSE,
                         onClick = { viewModel.setPieType(TransactionType.EXPENSE) },
-                        label = { Text("Expenses") }
+                        label = { Text(if (fa) "هزینه‌ها" else "Expenses") }
                     )
                     FilterChip(
                         selected = pieType == TransactionType.INCOME,
                         onClick = { viewModel.setPieType(TransactionType.INCOME) },
-                        label = { Text("Income") }
+                        label = { Text(if (fa) "درآمدها" else "Income") }
                     )
                 }
                 CategoryDonutChart(
@@ -232,7 +246,7 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
         // Trend chart
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("6-month trend", style = MaterialTheme.typography.titleMedium)
+                Text(if (fa) "روند ۶ ماه اخیر" else "6-month trend", style = MaterialTheme.typography.titleMedium)
                 MonthlyTrendBars(points = state.trend, modifier = Modifier.fillMaxWidth())
             }
         }
@@ -240,10 +254,10 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
         // Top categories
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Top categories", style = MaterialTheme.typography.titleMedium)
+                Text(if (fa) "پردسته‌ترین‌ها" else "Top categories", style = MaterialTheme.typography.titleMedium)
                 if (state.categoryTotals.isEmpty()) {
                     Text(
-                        "Nothing here yet.",
+                        if (fa) "هنوز چیزی اینجا نیست." else "Nothing here yet.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -271,17 +285,22 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
             Button(
                 onClick = { csvLauncher.launch("finflow-report.csv") },
                 modifier = Modifier.weight(1f)
-            ) { Text("Export CSV") }
+            ) { Text(if (fa) "خروجی CSV" else "Export CSV") }
             OutlinedButton(
                 onClick = { pdfLauncher.launch("finflow-report.pdf") },
                 modifier = Modifier.weight(1f)
-            ) { Text("Export PDF") }
+            ) { Text(if (fa) "خروجی PDF" else "Export PDF") }
         }
     }
 }
 
-private fun momSuffix(current: Double, previous: Double): String {
-    val change = ReportUtils.percentChange(current, previous) ?: return " • new this period"
+private fun momSuffix(current: Double, previous: Double, fa: Boolean): String {
+    val change = ReportUtils.percentChange(current, previous)
+        ?: return if (fa) " • جدید در این دوره" else " • new this period"
     val arrow = if (change >= 0) "▲" else "▼"
-    return " • $arrow ${kotlin.math.abs(change).toInt()}% vs previous"
+    return if (fa) {
+        " • $arrow ${kotlin.math.abs(change).toInt()}٪ نسبت به دوره قبل"
+    } else {
+        " • $arrow ${kotlin.math.abs(change).toInt()}% vs previous"
+    }
 }

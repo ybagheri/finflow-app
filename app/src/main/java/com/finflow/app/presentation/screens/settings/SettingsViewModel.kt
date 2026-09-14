@@ -25,7 +25,12 @@ class SettingsViewModel @Inject constructor(
     private val prefs: UserPreferences
 ) : ViewModel() {
 
-    val themeOptions = listOf(
+    /** Theme options, labeled in whichever language is currently active. */
+    fun themeOptions(languageCode: String) = if (languageCode == "fa") listOf(
+        SettingsOption("SYSTEM", "پیش‌فرض سیستم"),
+        SettingsOption("LIGHT", "روشن"),
+        SettingsOption("DARK", "تیره")
+    ) else listOf(
         SettingsOption("SYSTEM", "System default"),
         SettingsOption("LIGHT", "Light"),
         SettingsOption("DARK", "Dark")

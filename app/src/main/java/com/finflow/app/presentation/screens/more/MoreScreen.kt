@@ -19,10 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
+import com.finflow.app.core.util.LocalAppLanguage
 
 private data class HubEntry(
-    val title: String,
-    val subtitle: String,
+    val titleEn: String,
+    val subtitleEn: String,
+    val titleFa: String,
+    val subtitleFa: String,
     val icon: ImageVector,
     val onClick: () -> Unit
 )
@@ -38,38 +42,39 @@ fun MoreScreen(
     onRecurringClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
+    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
     val entries = listOf(
         HubEntry(
-            "Budgets",
-            "Monthly caps with overspend alerts",
+            "Budgets", "Monthly caps with overspend alerts",
+            "بودجه‌ها", "سقف ماهانه با هشدار خرج بیش از حد",
             Icons.Filled.AccountBalanceWallet,
             onBudgetsClick
         ),
         HubEntry(
-            "Goals",
-            "Savings targets and deposits",
+            "Goals", "Savings targets and deposits",
+            "اهداف", "اهداف پس‌انداز و واریزی‌ها",
             Icons.Filled.Savings,
             onGoalsClick
         ),
         HubEntry(
-            "Recurring",
-            "Automated transactions",
+            "Recurring", "Automated transactions",
+            "تکرارشونده", "تراکنش‌های خودکار",
             Icons.Filled.Repeat,
             onRecurringClick
         ),
         HubEntry(
-            "Settings",
-            "Theme, currency, app lock",
+            "Settings", "Theme, currency, app lock",
+            "تنظیمات", "ظاهر، واحد پول، قفل برنامه",
             Icons.Filled.Settings,
             onSettingsClick
         )
     )
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("More", style = MaterialTheme.typography.headlineSmall)
+        Text(if (fa) "بیشتر" else "More", style = MaterialTheme.typography.headlineSmall)
         entries.forEach { entry ->
             ListItem(
-                headlineContent = { Text(entry.title) },
-                supportingContent = { Text(entry.subtitle) },
+                headlineContent = { Text(if (fa) entry.titleFa else entry.titleEn) },
+                supportingContent = { Text(if (fa) entry.subtitleFa else entry.subtitleEn) },
                 leadingContent = {
                     Icon(entry.icon, contentDescription = null)
                 },

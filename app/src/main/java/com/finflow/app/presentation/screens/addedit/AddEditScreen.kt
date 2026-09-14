@@ -36,8 +36,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finflow.app.core.util.DateUtils
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
 import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.domain.model.TransactionType
+import com.finflow.app.presentation.components.JalaliDatePickerDialog
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -62,6 +64,7 @@ fun AddEditScreen(
     val categories by viewModel.availableCategories.collectAsState()
     val scope = rememberCoroutineScope()
     val language = LocalAppLanguage.current
+    val fa = language == LANGUAGE_PERSIAN
     var showDatePicker by remember { mutableStateOf(false) }
     var categoryMenu by remember { mutableStateOf(false) }
     var paymentMenu by remember { mutableStateOf(false) }
@@ -73,7 +76,11 @@ fun AddEditScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            if (viewModel.isEditing) "Edit transaction" else "Add transaction",
+            if (viewModel.isEditing) {
+                if (fa) "ویرایش تراکنش" else "Edit transaction"
+            } else {
+                if (fa) "افزودن تراکنش" else "Add transaction"
+            },
             style = MaterialTheme.typography.headlineSmall
         )
         // Type toggle
@@ -82,14 +89,22 @@ fun AddEditScreen(
                 FilterChip(
                     selected = type == t,
                     onClick = { viewModel.onTypeChange(t) },
-                    label = { Text(t.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                    label = {
+                        Text(
+                            if (fa) {
+                                if (t == TransactionType.INCOME) "درآمد" else "هزینه"
+                            } else {
+                                t.name.lowercase().replaceFirstChar { it.uppercase() }
+                            }
+                        )
+                    }
                 )
             }
         }
         OutlinedTextField(
             value = amount,
             onValueChange = viewModel::onAmountChange,
-            label = { Text("Amount") },
+            label = { Text(if (fa) "مبلغ" else "Amount") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             isError = error != null,
             supportingText = error?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
@@ -101,11 +116,11 @@ fun AddEditScreen(
             onClick = { categoryMenu = true },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(selectedCategory?.name ?: "Select category")
+            Text(selectedCategory?.name ?: (if (fa) "انتخاب دسته" else "Select category"))
         }
         DropdownMenu(expanded = categoryMenu, onDismissRequest = { categoryMenu = false }) {
             if (categories.isEmpty()) {
-                DropdownMenuItem(text = { Text("No categories") }, onClick = { categoryMenu = false })
+                DropdownMenuItem(text = { Text(if (fa) "دسته‌ای موجود نیست" else "No categories") }, onClick = { categoryMenu = false })
             }
             categories.forEach { cat ->
                 DropdownMenuItem(
@@ -122,35 +137,43 @@ fun AddEditScreen(
             Text(DateUtils.formatForDisplay(dateEpochDay, language))
         }
         if (showDatePicker) {
-            val pickerState = rememberDatePickerState(
-                initialSelectedDateMillis = LocalDate.ofEpochDay(dateEpochDay)
-                    .atStartOfDay(java.time.ZoneId.systemDefault())
-                    .toInstant().toEpochMilli()
-            )
-            DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        pickerState.selectedDateMillis?.let { millis ->
-                            val epochDay = java.time.Instant.ofEpochMilli(millis)
-                                .atZone(java.time.ZoneId.systemDefault())
-                                .toLocalDate().toEpochDay()
-                            viewModel.onDateChange(epochDay)
-                        }
-                        showDatePicker = false
-                    }) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            if (fa) {
+                JalaliDatePickerDialog(
+                    initialEpochDay = dateEpochDay,
+                    onConfirm = { viewModel.onDateChange(it); showDatePicker = false },
+                    onDismiss = { showDatePicker = false }
+                )
+            } else {
+                val pickerState = rememberDatePickerState(
+                    initialSelectedDateMillis = LocalDate.ofEpochDay(dateEpochDay)
+                        .atStartOfDay(java.time.ZoneId.systemDefault())
+                        .toInstant().toEpochMilli()
+                )
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            pickerState.selectedDateMillis?.let { millis ->
+                                val epochDay = java.time.Instant.ofEpochMilli(millis)
+                                    .atZone(java.time.ZoneId.systemDefault())
+                                    .toLocalDate().toEpochDay()
+                                viewModel.onDateChange(epochDay)
+                            }
+                            showDatePicker = false
+                        }) { Text("OK") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                    }
+                ) {
+                    DatePicker(state = pickerState)
                 }
-            ) {
-                DatePicker(state = pickerState)
             }
         }
         OutlinedTextField(
             value = note,
             onValueChange = viewModel::onNoteChange,
-            label = { Text("Note (optional)") },
+            label = { Text(if (fa) "یادداشت (اختیاری)" else "Note (optional)") },
             modifier = Modifier.fillMaxWidth()
         )
         // Payment method picker
@@ -158,11 +181,11 @@ fun AddEditScreen(
             onClick = { paymentMenu = true },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(paymentMethod.ifBlank { "Payment method (optional)" })
+            Text(paymentMethod.ifBlank { if (fa) "روش پرداخت (اختیاری)" else "Payment method (optional)" })
         }
         DropdownMenu(expanded = paymentMenu, onDismissRequest = { paymentMenu = false }) {
             DropdownMenuItem(
-                text = { Text("None") },
+                text = { Text(if (fa) "هیچ‌کدام" else "None") },
                 onClick = { viewModel.onPaymentMethodChange(""); paymentMenu = false }
             )
             PAYMENT_METHODS.forEach { method ->
@@ -175,7 +198,7 @@ fun AddEditScreen(
         OutlinedTextField(
             value = paymentMethod,
             onValueChange = viewModel::onPaymentMethodChange,
-            label = { Text("Or custom payment method") },
+            label = { Text(if (fa) "یا روش پرداخت سفارشی" else "Or custom payment method") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -189,7 +212,13 @@ fun AddEditScreen(
             enabled = !saving,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (saving) "Saving…" else "Save")
+            Text(
+                if (saving) {
+                    if (fa) "در حال ذخیره…" else "Saving…"
+                } else {
+                    if (fa) "ذخیره" else "Save"
+                }
+            )
         }
     }
 }

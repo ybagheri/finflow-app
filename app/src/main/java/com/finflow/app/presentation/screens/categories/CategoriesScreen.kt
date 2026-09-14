@@ -44,6 +44,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finflow.app.core.util.LANGUAGE_PERSIAN
+import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.domain.model.Category
 import com.finflow.app.domain.model.TransactionType
 import com.finflow.app.presentation.components.EmptyState
@@ -57,6 +59,7 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
     var showDialog by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf<Category?>(null) }
     val snackbar = remember { SnackbarHostState() }
+    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
 
     LaunchedEffect(error) {
         if (error != null) {
@@ -72,21 +75,21 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
                 editing = null
                 showDialog = true
             }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add category")
+                Icon(Icons.Filled.Add, contentDescription = if (fa) "افزودن دسته" else "Add category")
             }
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            Text("Categories", style = MaterialTheme.typography.headlineSmall)
+            Text(if (fa) "دسته‌ها" else "Categories", style = MaterialTheme.typography.headlineSmall)
             Text(
-                "Defaults cannot be deleted. Custom categories support full CRUD.",
+                if (fa) "دسته‌های پیش‌فرض قابل حذف نیستند. دسته‌های سفارشی کاملاً قابل ویرایش‌اند." else "Defaults cannot be deleted. Custom categories support full CRUD.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (categories.isEmpty()) {
                 EmptyState(
-                    title = "No categories",
-                    subtitle = "Defaults are seeded on first launch.",
+                    title = if (fa) "دسته‌ای موجود نیست" else "No categories",
+                    subtitle = if (fa) "دسته‌های پیش‌فرض در اولین اجرا ایجاد می‌شوند." else "Defaults are seeded on first launch.",
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -95,10 +98,17 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
                         ListItem(
                             headlineContent = { Text(cat.name) },
                             supportingContent = {
+                                val kind = if (fa) {
+                                    if (cat.type == TransactionType.INCOME) "درآمد" else "هزینه"
+                                } else {
+                                    cat.type.name.lowercase().replaceFirstChar { it.uppercase() }
+                                }
                                 Text(
-                                    (if (cat.isDefault) "Default • " else "Custom • ") +
-                                        cat.type.name.lowercase()
-                                            .replaceFirstChar { it.uppercase() }
+                                    (if (cat.isDefault) {
+                                        if (fa) "پیش‌فرض • " else "Default • "
+                                    } else {
+                                        if (fa) "سفارشی • " else "Custom • "
+                                    }) + kind
                                 )
                             },
                             leadingContent = {
@@ -122,13 +132,13 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
                                         editing = cat
                                         showDialog = true
                                     }) {
-                                        Icon(Icons.Filled.Edit, contentDescription = "Rename")
+                                        Icon(Icons.Filled.Edit, contentDescription = if (fa) "ویرایش نام" else "Rename")
                                     }
                                     if (!cat.isDefault) {
                                         IconButton(onClick = { confirmDelete = cat }) {
                                             Icon(
                                                 Icons.Filled.Delete,
-                                                contentDescription = "Delete",
+                                                contentDescription = if (fa) "حذف" else "Delete",
                                                 tint = MaterialTheme.colorScheme.error
                                             )
                                         }
@@ -154,16 +164,20 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
     confirmDelete?.let { cat ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text("Delete \"${cat.name}\"?") },
-            text = { Text("Transactions in this category will keep their history but lose the link. This cannot be undone.") },
+            title = { Text(if (fa) "حذف «${cat.name}»؟" else "Delete \"${cat.name}\"?") },
+            text = {
+                Text(
+                    if (fa) "تراکنش‌های این دسته تاریخچه خود را حفظ می‌کنند اما ارتباطشان با دسته قطع می‌شود. این عمل قابل بازگشت نیست." else "Transactions in this category will keep their history but lose the link. This cannot be undone."
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteCategory(cat)
                     confirmDelete = null
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text(if (fa) "حذف" else "Delete", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = null }) { Text("Cancel") }
+                TextButton(onClick = { confirmDelete = null }) { Text(if (fa) "لغو" else "Cancel") }
             }
         )
     }
@@ -178,16 +192,25 @@ private fun CategoryDialog(
     var name by remember { mutableStateOf(existing?.name.orEmpty()) }
     var type by remember { mutableStateOf(existing?.type ?: TransactionType.EXPENSE) }
     var color by remember { mutableIntStateOf(existing?.colorArgb ?: CATEGORY_COLORS[0]) }
+    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (existing == null) "New category" else "Edit category") },
+        title = {
+            Text(
+                if (existing == null) {
+                    if (fa) "دسته جدید" else "New category"
+                } else {
+                    if (fa) "ویرایش دسته" else "Edit category"
+                }
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text(if (fa) "نام" else "Name") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -197,12 +220,18 @@ private fun CategoryDialog(
                             selected = type == t,
                             onClick = { type = t },
                             label = {
-                                Text(t.name.lowercase().replaceFirstChar { it.uppercase() })
+                                Text(
+                                    if (fa) {
+                                        if (t == TransactionType.INCOME) "درآمد" else "هزینه"
+                                    } else {
+                                        t.name.lowercase().replaceFirstChar { it.uppercase() }
+                                    }
+                                )
                             }
                         )
                     }
                 }
-                Text("Color", style = MaterialTheme.typography.labelLarge)
+                Text(if (fa) "رنگ" else "Color", style = MaterialTheme.typography.labelLarge)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -220,7 +249,7 @@ private fun CategoryDialog(
                 }
                 if (existing?.isDefault == true) {
                     Text(
-                        "Default category: rename and recolor are allowed; delete is disabled.",
+                        if (fa) "دسته پیش‌فرض: تغییر نام و رنگ مجاز است؛ حذف غیرفعال است." else "Default category: rename and recolor are allowed; delete is disabled.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -228,10 +257,10 @@ private fun CategoryDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(name, type, color) }) { Text("Save") }
+            TextButton(onClick = { onSave(name, type, color) }) { Text(if (fa) "ذخیره" else "Save") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(if (fa) "لغو" else "Cancel") }
         }
     )
 }
