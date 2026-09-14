@@ -41,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finflow.app.core.util.CategoryLocalization
 import com.finflow.app.core.util.CurrencyUtils
 import com.finflow.app.core.util.DateUtils
 import com.finflow.app.core.util.LANGUAGE_PERSIAN
@@ -145,7 +146,10 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(row.category.name, style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                CategoryLocalization.displayName(row.category, language),
+                                style = MaterialTheme.typography.titleSmall
+                            )
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (row.budget == null) {
                                     IconButton(onClick = { editing = row }) {
@@ -209,7 +213,10 @@ fun BudgetsScreen(viewModel: BudgetsViewModel = hiltViewModel()) {
         var error by remember { mutableStateOf<String?>(null) }
         AlertDialog(
             onDismissRequest = { editing = null },
-            title = { Text(if (fa) "سقف برای ${row.category.name}" else "Cap for ${row.category.name}") },
+            title = {
+                val catName = CategoryLocalization.displayName(row.category, language)
+                Text(if (fa) "سقف برای $catName" else "Cap for $catName")
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(

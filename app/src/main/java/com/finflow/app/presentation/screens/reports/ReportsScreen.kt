@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finflow.app.core.util.CategoryLocalization
 import com.finflow.app.core.util.CurrencyUtils
 import com.finflow.app.core.util.DateUtils
 import com.finflow.app.core.util.LANGUAGE_PERSIAN
@@ -71,7 +72,7 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
         categoryById[id]?.let { Color(it.colorArgb) } ?: fallbackCategoryColor
     }
     val nameOf: (Long) -> String = { id ->
-        categoryById[id]?.name ?: (if (fa) "ناشناخته" else "Unknown")
+        categoryById[id]?.let { CategoryLocalization.displayName(it, language) } ?: (if (fa) "ناشناخته" else "Unknown")
     }
     // Totals are stored in IRR; convert once for display (Phase 5/6 currency).
     fun shown(amount: Double): String = CurrencyUtils.format(

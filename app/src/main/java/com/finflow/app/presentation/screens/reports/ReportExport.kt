@@ -84,27 +84,32 @@ object ReportExport {
 
         drawLine(title, titlePaint)
         y += 6f
-        drawLine("Generated ${DateUtils.formatForDisplay(DateUtils.todayEpochDay(), languageCode)}", bodyPaint)
+        drawLine(
+            (if (languageCode == "fa") "تاریخ تولید: " else "Generated ") +
+                DateUtils.formatForDisplay(DateUtils.todayEpochDay(), languageCode),
+            bodyPaint
+        )
         y += 10f
-        drawLine("Summary", headerPaint)
-        drawLine("Income: ${summary.income}")
-        drawLine("Expense: ${summary.expense}")
-        drawLine("Net balance: ${summary.net}")
-        drawLine("Transactions: ${summary.count}")
+        val fa = languageCode == "fa"
+        drawLine(if (fa) "خلاصه" else "Summary", headerPaint)
+        drawLine((if (fa) "درآمد: " else "Income: ") + summary.income)
+        drawLine((if (fa) "هزینه: " else "Expense: ") + summary.expense)
+        drawLine((if (fa) "موجودی خالص: " else "Net balance: ") + summary.net)
+        drawLine((if (fa) "تعداد تراکنش: " else "Transactions: ") + summary.count)
         y += 10f
-        drawLine("Top categories", headerPaint)
+        drawLine(if (fa) "پردسته‌ترین‌ها" else "Top categories", headerPaint)
         if (topCategories.isEmpty()) {
-            drawLine("No activity in this period.")
+            drawLine(if (fa) "فعالیتی در این دوره نبود." else "No activity in this period.")
         } else {
             topCategories.take(10).forEach { (name, total) -> drawLine("$name — $total") }
         }
         y += 10f
-        drawLine("Transactions", headerPaint)
+        drawLine(if (fa) "تراکنش‌ها" else "Transactions", headerPaint)
         if (transactions.isEmpty()) {
-            drawLine("No transactions in this period.")
+            drawLine(if (fa) "تراکنشی در این دوره نبود." else "No transactions in this period.")
         } else {
             transactions.sortedBy { it.dateEpochDay }.forEach { tx ->
-                val date = LocalDate.ofEpochDay(tx.dateEpochDay).toString()
+                val date = DateUtils.formatForDisplay(tx.dateEpochDay, languageCode)
                 val note = tx.note.ifBlank { tx.type.name }.take(32)
                 drawLine("$date  ${tx.type.name}  ${tx.amount} ${tx.currencyCode}  $note")
             }

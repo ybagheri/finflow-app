@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finflow.app.core.util.CategoryLocalization
 import com.finflow.app.core.util.CurrencyUtils
 import com.finflow.app.core.util.DateUtils
 import com.finflow.app.core.util.LANGUAGE_PERSIAN
@@ -134,7 +135,9 @@ fun RecurringScreen(viewModel: RecurringViewModel = hiltViewModel()) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(rules, key = { it.id }) { rule ->
-                        val catName = categoryById[rule.categoryId]?.name ?: rule.type.name
+                        val catName = categoryById[rule.categoryId]?.let {
+                            CategoryLocalization.displayName(it, language)
+                        } ?: rule.type.name
                         val nextDue = remember(rule, language) {
                             RecurringScheduler.nextDueAfter(rule)?.let {
                                 DateUtils.formatForDisplay(it.toEpochDay(), language)
@@ -281,12 +284,16 @@ private fun RuleDialog(
                     onClick = { categoryMenu = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(typeCategories.firstOrNull { it.id == categoryId }?.name ?: (if (fa) "انتخاب دسته" else "Select category"))
+                    Text(
+                        typeCategories.firstOrNull { it.id == categoryId }
+                            ?.let { CategoryLocalization.displayName(it, language) }
+                            ?: (if (fa) "انتخاب دسته" else "Select category")
+                    )
                 }
                 DropdownMenu(expanded = categoryMenu, onDismissRequest = { categoryMenu = false }) {
                     typeCategories.forEach { cat ->
                         DropdownMenuItem(
-                            text = { Text(cat.name) },
+                            text = { Text(CategoryLocalization.displayName(cat, language)) },
                             onClick = { categoryId = cat.id; categoryMenu = false }
                         )
                     }

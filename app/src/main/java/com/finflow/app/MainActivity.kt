@@ -85,8 +85,10 @@ class MainActivity : FragmentActivity() {
                         } else if (lockEnabled) {
                             var unlocked by remember { mutableStateOf(false) }
                             var failed by remember { mutableStateOf(false) }
+                            val fa = appLanguage == "fa"
                             LaunchedEffect(Unit) {
                                 authenticate(
+                                    languageCode = appLanguage,
                                     onSuccess = { unlocked = true },
                                     onError = { failed = true }
                                 )
@@ -102,17 +104,22 @@ class MainActivity : FragmentActivity() {
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
-                                        if (failed) "Authentication needed" else "FinFlow is locked",
+                                        if (failed) {
+                                            if (fa) "نیاز به تایید هویت" else "Authentication needed"
+                                        } else {
+                                            if (fa) "FinFlow قفل است" else "FinFlow is locked"
+                                        },
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                     Spacer(Modifier.height(12.dp))
                                     Button(onClick = {
                                         failed = false
                                         authenticate(
+                                            languageCode = appLanguage,
                                             onSuccess = { unlocked = true },
                                             onError = { failed = true }
                                         )
-                                    }) { Text("Unlock") }
+                                    }) { Text(if (fa) "باز کردن قفل" else "Unlock") }
                                 }
                             }
                         } else {
@@ -130,7 +137,7 @@ class MainActivity : FragmentActivity() {
      * Prompts for biometrics; devices without enrolled biometrics (or with
      * the lock disabled) pass through so the app can never brick itself.
      */
-    private fun authenticate(onSuccess: () -> Unit, onError: () -> Unit) {
+    private fun authenticate(languageCode: String, onSuccess: () -> Unit, onError: () -> Unit) {
         if (BiometricManager.from(this).canAuthenticate(
                 BiometricManager.Authenticators.BIOMETRIC_STRONG
             ) != BiometricManager.BIOMETRIC_SUCCESS
@@ -138,6 +145,7 @@ class MainActivity : FragmentActivity() {
             onSuccess()
             return
         }
+        val fa = languageCode == "fa"
         val prompt = BiometricPrompt(
             this,
             ContextCompat.getMainExecutor(this),
@@ -153,9 +161,14 @@ class MainActivity : FragmentActivity() {
         )
         prompt.authenticate(
             BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Unlock FinFlow")
-                .setSubtitle("Confirm it's you to open your finances")
+                .setTitle(if (fa) "باز کردن قفل FinFlow" else "Unlock FinFlow")
+                .setSubtitle(if (fa) "برای باز کردن اطلاعات مالی خود تایید کن" else "Confirm it's you to open your finances")
                 .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                // Required by AndroidX Biometric whenever DEVICE_CREDENTIAL isn't
+                // included in setAllowedAuthenticators — omitting this makes
+                // PromptInfo.Builder.build() throw IllegalStateException, which
+                // crashed the app on every launch once the lock was enabled.
+                .setNegativeButtonText(if (fa) "لغو" else "Cancel")
                 .build()
         )
     }

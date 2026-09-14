@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finflow.app.core.util.CategoryLocalization
 import com.finflow.app.core.util.LANGUAGE_PERSIAN
 import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.domain.model.TransactionSortField
@@ -76,6 +77,7 @@ fun TransactionsScreen(
     var categoryMenu by remember { mutableStateOf(false) }
     val hasActiveFilters = query.isNotBlank() || typeFilter != null || categoryFilter != null
     val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
+    val language = if (fa) LANGUAGE_PERSIAN else "en"
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -148,7 +150,9 @@ fun TransactionsScreen(
                 )
             }
             item {
-                val activeName = categoryFilter?.let { categoryById[it]?.name } ?: (if (fa) "دسته" else "Category")
+                val activeName = categoryFilter?.let {
+                    categoryById[it]?.let { c -> CategoryLocalization.displayName(c, language) }
+                } ?: (if (fa) "دسته" else "Category")
                 FilterChip(
                     selected = categoryFilter != null,
                     onClick = { categoryMenu = true },
@@ -172,7 +176,7 @@ fun TransactionsScreen(
             )
             categories.forEach { cat ->
                 DropdownMenuItem(
-                    text = { Text(cat.name) },
+                    text = { Text(CategoryLocalization.displayName(cat, language)) },
                     onClick = { viewModel.setCategoryFilter(cat.id); categoryMenu = false }
                 )
             }

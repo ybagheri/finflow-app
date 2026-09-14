@@ -102,17 +102,19 @@ class BudgetsViewModel @Inject constructor(
                 val notified = prefs.notifiedBudgets.first()
                 val currency = prefs.displayCurrency.first()
                 val rates = prefs.ratesToIrr.first()
+                val language = prefs.appLanguage.first() ?: "en"
                 list.filter { it.overspent && it.budget != null }.forEach { row ->
                     val key = "$monthKey:${row.budget!!.id}"
                     if (key !in notified && notificationsAllowed()) {
                         Notifications.notifyOverspend(
                             appContext,
                             row.budget.id.toInt(),
-                            row.category.name,
+                            com.finflow.app.core.util.CategoryLocalization.displayName(row.category, language),
                             row.spent,
                             row.limit!!,
                             currency,
-                            rates
+                            rates,
+                            language
                         )
                         prefs.markBudgetNotified(key)
                     }

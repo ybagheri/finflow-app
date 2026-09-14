@@ -37,7 +37,8 @@ object Notifications {
         spent: Double,
         limit: Double,
         currencyCode: String = "IRR",
-        ratesToIrr: Map<String, Double> = emptyMap()
+        ratesToIrr: Map<String, Double> = emptyMap(),
+        languageCode: String = "en"
     ) {
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -53,10 +54,17 @@ object Notifications {
             val shownLimit = CurrencyUtils.convertWithRates(limit, "IRR", currencyCode, ratesToIrr)
             val notification = NotificationCompat.Builder(context, CHANNEL_BUDGETS)
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .setContentTitle("Over budget: $categoryName")
+                .setContentTitle(
+                    if (languageCode == "fa") "بیش از بودجه: $categoryName" else "Over budget: $categoryName"
+                )
                 .setContentText(
-                    "Spent ${CurrencyUtils.format(shownSpent, currencyCode)} " +
-                        "of ${CurrencyUtils.format(shownLimit, currencyCode)} cap"
+                    if (languageCode == "fa") {
+                        "${CurrencyUtils.format(shownSpent, currencyCode)} از سقف " +
+                            CurrencyUtils.format(shownLimit, currencyCode) + " خرج شد"
+                    } else {
+                        "Spent ${CurrencyUtils.format(shownSpent, currencyCode)} " +
+                            "of ${CurrencyUtils.format(shownLimit, currencyCode)} cap"
+                    }
                 )
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)

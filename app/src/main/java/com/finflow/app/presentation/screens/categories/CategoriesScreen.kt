@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finflow.app.core.util.CategoryLocalization
 import com.finflow.app.core.util.LANGUAGE_PERSIAN
 import com.finflow.app.core.util.LocalAppLanguage
 import com.finflow.app.domain.model.Category
@@ -95,8 +96,9 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
             } else {
                 LazyColumn {
                     items(categories, key = { it.id }) { cat ->
+                        val displayName = CategoryLocalization.displayName(cat, if (fa) LANGUAGE_PERSIAN else "en")
                         ListItem(
-                            headlineContent = { Text(cat.name) },
+                            headlineContent = { Text(displayName) },
                             supportingContent = {
                                 val kind = if (fa) {
                                     if (cat.type == TransactionType.INCOME) "درآمد" else "هزینه"
@@ -120,7 +122,7 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        cat.name.firstOrNull()?.uppercase() ?: "?",
+                                        displayName.firstOrNull()?.uppercase() ?: "?",
                                         color = Color.White,
                                         style = MaterialTheme.typography.titleMedium
                                     )
@@ -162,9 +164,10 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
         )
     }
     confirmDelete?.let { cat ->
+        val displayName = CategoryLocalization.displayName(cat, if (fa) LANGUAGE_PERSIAN else "en")
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text(if (fa) "حذف «${cat.name}»؟" else "Delete \"${cat.name}\"?") },
+            title = { Text(if (fa) "حذف «$displayName»؟" else "Delete \"$displayName\"?") },
             text = {
                 Text(
                     if (fa) "تراکنش‌های این دسته تاریخچه خود را حفظ می‌کنند اما ارتباطشان با دسته قطع می‌شود. این عمل قابل بازگشت نیست." else "Transactions in this category will keep their history but lose the link. This cannot be undone."
@@ -189,10 +192,12 @@ private fun CategoryDialog(
     onDismiss: () -> Unit,
     onSave: (name: String, type: TransactionType, color: Int) -> Unit
 ) {
-    var name by remember { mutableStateOf(existing?.name.orEmpty()) }
+    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
+    var name by remember {
+        mutableStateOf(existing?.let { CategoryLocalization.displayName(it, if (fa) LANGUAGE_PERSIAN else "en") }.orEmpty())
+    }
     var type by remember { mutableStateOf(existing?.type ?: TransactionType.EXPENSE) }
     var color by remember { mutableIntStateOf(existing?.colorArgb ?: CATEGORY_COLORS[0]) }
-    val fa = LocalAppLanguage.current == LANGUAGE_PERSIAN
 
     AlertDialog(
         onDismissRequest = onDismiss,

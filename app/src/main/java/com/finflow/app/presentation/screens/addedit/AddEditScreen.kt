@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.finflow.app.core.util.CategoryLocalization
 import com.finflow.app.core.util.DateUtils
 import com.finflow.app.core.util.LANGUAGE_PERSIAN
 import com.finflow.app.core.util.LocalAppLanguage
@@ -116,7 +117,10 @@ fun AddEditScreen(
             onClick = { categoryMenu = true },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(selectedCategory?.name ?: (if (fa) "انتخاب دسته" else "Select category"))
+            Text(
+                selectedCategory?.let { CategoryLocalization.displayName(it, language) }
+                    ?: (if (fa) "انتخاب دسته" else "Select category")
+            )
         }
         DropdownMenu(expanded = categoryMenu, onDismissRequest = { categoryMenu = false }) {
             if (categories.isEmpty()) {
@@ -124,7 +128,7 @@ fun AddEditScreen(
             }
             categories.forEach { cat ->
                 DropdownMenuItem(
-                    text = { Text(cat.name) },
+                    text = { Text(CategoryLocalization.displayName(cat, language)) },
                     onClick = {
                         viewModel.onCategoryChange(cat.id)
                         categoryMenu = false
